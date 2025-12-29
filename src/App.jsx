@@ -1,7 +1,25 @@
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import AdminLoginPage from "./pages/admin/AdminLoginPage";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import ProtectedRoute from "./components/admin/ProtectedRoute";
+
 function App() {
   return (
-    <h1>Hello React + Vite 🚀</h1>
-  )
+    <BrowserRouter>
+      <Routes>
+        <Route path="/admin/login" element={<AdminLoginPage />} />
+
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
