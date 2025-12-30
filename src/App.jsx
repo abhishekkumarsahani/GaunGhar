@@ -1,7 +1,10 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AdminLoginPage from "./pages/admin/AdminLoginPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminUsers from "./pages/admin/AdminUsers";
 import ProtectedRoute from "./components/admin/ProtectedRoute";
+import MyProfile from "./pages/admin/MyProfile";
+
 
 function App() {
   return (
@@ -17,7 +20,27 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute>
+              <AdminUsers />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/profile"
+          element={
+            <ProtectedRoute>
+              <MyProfile />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
+
+      
     </BrowserRouter>
   );
 }
