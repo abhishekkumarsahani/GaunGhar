@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -41,8 +41,15 @@ const Login = () => {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  // Clear any existing admin user data on component mount
+  useEffect(() => {
+    localStorage.removeItem("adminUser");
+  }, []);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Clear error when user starts typing
+    if (error) setError("");
   };
 
   const handleSubmit = async (e) => {
@@ -50,13 +57,31 @@ const Login = () => {
     setLoading(true);
     setError("");
 
+    // Basic validation
+    if (!formData.UserName.trim() || !formData.Password.trim()) {
+      setError("Please enter both username and password");
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await adminLogin(formData);
+      console.log("API Response:", res); // For debugging
+      
+      // Check if response indicates success
+      // Your API returns StatusCode: 203 for failure, so we need to check this
+      if (res.StatusCode !== 200 || !res.loginLst) {
+        // Check for specific error message from API
+        const errorMessage = res.Message || "Invalid credentials. Please try again.";
+        throw new Error(errorMessage);
+      }
+      
+      // Only store user data if login is successful
       localStorage.setItem("adminUser", JSON.stringify(res));
       navigate("/admin/dashboard");
     } catch (err) {
-      console.error(err);
-      setError("Invalid username or password. Please try again.");
+      console.error("Login error:", err);
+      setError(err.message || "Invalid username or password. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -64,6 +89,13 @@ const Login = () => {
 
   const handleClickShowPassword = () => {
     setShowPassword(!showPassword);
+  };
+
+  // Handle Enter key press
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !loading) {
+      handleSubmit(e);
+    }
   };
 
   return (
@@ -202,6 +234,7 @@ const Login = () => {
                     "20%, 40%, 60%, 80%": { transform: "translateX(5px)" },
                   },
                 }}
+                onClose={() => setError("")}
               >
                 {error}
               </Alert>
@@ -217,9 +250,12 @@ const Login = () => {
               margin="normal"
               value={formData.UserName}
               onChange={handleChange}
+              onKeyPress={handleKeyPress}
               required
               variant="outlined"
               size="medium"
+              disabled={loading}
+              autoComplete="username"
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -252,9 +288,12 @@ const Login = () => {
               margin="normal"
               value={formData.Password}
               onChange={handleChange}
+              onKeyPress={handleKeyPress}
               required
               variant="outlined"
               size="medium"
+              disabled={loading}
+              autoComplete="current-password"
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -267,6 +306,7 @@ const Login = () => {
                       onClick={handleClickShowPassword}
                       edge="end"
                       size="small"
+                      disabled={loading}
                     >
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
@@ -292,7 +332,7 @@ const Login = () => {
               fullWidth
               variant="contained"
               size="large"
-              disabled={loading}
+              disabled={loading || !formData.UserName || !formData.Password}
               sx={{
                 mt: 4,
                 mb: 2,
@@ -318,6 +358,8 @@ const Login = () => {
                 },
                 "&:disabled": {
                   background: theme.palette.action.disabledBackground,
+                  transform: "none",
+                  boxShadow: "none",
                 },
               }}
             >
@@ -327,6 +369,21 @@ const Login = () => {
                 "Sign In"
               )}
             </Button>
+
+            {/* Demo credentials hint (remove in production) */}
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                display: "block",
+                textAlign: "center",
+                mt: 2,
+                opacity: 0.7,
+                fontStyle: "italic",
+              }}
+            >
+              ToleID: ES25 • Source: W
+            </Typography>
 
             {/* Footer Note */}
             <Typography

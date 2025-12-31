@@ -40,9 +40,9 @@ const menuItems = [
     color: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
   },
   {
-    text: "Products",
+    text: "Tole",
     icon: <Store />,
-    path: "/admin/products",
+    path: "/admin/tole",
     color: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
   },
   {
