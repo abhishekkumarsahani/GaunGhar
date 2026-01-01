@@ -62,6 +62,7 @@ const ToleForm = ({ open, onClose, onSubmit, mode, initialData }) => {
   const [errors, setErrors] = useState({});
   const [logoPreview, setLogoPreview] = useState("");
   const [logoFile, setLogoFile] = useState(null);
+  const [isLogoChanged, setIsLogoChanged] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -77,6 +78,8 @@ const ToleForm = ({ open, onClose, onSubmit, mode, initialData }) => {
         }
         setFormData(editData);
         setLogoPreview(editData.Logo || "");
+        setIsLogoChanged(false); // Reset logo changed flag
+        setLogoFile(null); // Reset logo file
       } else {
         resetForm();
       }
@@ -91,7 +94,7 @@ const ToleForm = ({ open, onClose, onSubmit, mode, initialData }) => {
       if (response.StatusCode === 200) {
         setLookupData(prev => ({
           ...prev,
-          provinces: response.refLst || []
+          provinces: response.RefLst || []
         }));
       }
     } catch (err) {
@@ -115,7 +118,7 @@ const ToleForm = ({ open, onClose, onSubmit, mode, initialData }) => {
       if (response.StatusCode === 200) {
         setLookupData(prev => ({
           ...prev,
-          districts: response.refLst || []
+          districts: response.RefLst || []
         }));
       }
     } catch (err) {
@@ -139,7 +142,7 @@ const ToleForm = ({ open, onClose, onSubmit, mode, initialData }) => {
       if (response.StatusCode === 200) {
         setLookupData(prev => ({
           ...prev,
-          municipalities: response.refLst || []
+          municipalities: response.RefLst || []
         }));
       }
     } catch (err) {
@@ -149,15 +152,36 @@ const ToleForm = ({ open, onClose, onSubmit, mode, initialData }) => {
     }
   };
 
+  const getToleIdFromLocalStorage = () => {
+    try {
+      // Try to get from different possible localStorage keys
+      const userData = localStorage.getItem("userData");
+      if (userData) {
+        const parsedData = JSON.parse(userData);
+        return parsedData.ToleId || parsedData.toleId || "";
+      }
+      
+      // Try other common keys
+      const toleId = localStorage.getItem("ToleId") || localStorage.getItem("toleId") || "";
+      return toleId;
+    } catch (error) {
+      console.error("Error reading ToleId from localStorage:", error);
+      return "";
+    }
+  };
+
   const resetForm = () => {
+    // Get ToleId from localStorage for new records
+    const toleIdFromStorage = mode === "create" ? getToleIdFromLocalStorage() : "";
+    
     setFormData({
-      ToleId: "",
+      ToleId: mode === "create" ? toleIdFromStorage : "",
       Name: "",
       Address: "",
       DistrictID: "",
       WadaNo: "",
-      MunicipalityID: "",
-      ProvinceNo: "",
+      MunicipalityID: 0,
+      ProvinceNo: 0,
       Contact: "",
       Email: "",
       Logo: "",
@@ -173,13 +197,23 @@ const ToleForm = ({ open, onClose, onSubmit, mode, initialData }) => {
     });
     setLogoPreview("");
     setLogoFile(null);
+    setIsLogoChanged(false);
     setErrors({});
+    setLookupData({
+      provinces: [],
+      districts: [],
+      municipalities: []
+    });
   };
 
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.ToleId?.trim()) newErrors.ToleId = "Tole ID is required";
+    // Check if ToleId is empty
+    if (!formData.ToleId || !formData.ToleId.trim()) {
+      newErrors.ToleId = "Tole ID is required";
+    }
+    
     if (!formData.Name?.trim()) newErrors.Name = "Name is required";
     if (!formData.Address?.trim()) newErrors.Address = "Address is required";
     if (!formData.DistrictID) newErrors.DistrictID = "District is required";
@@ -195,37 +229,75 @@ const ToleForm = ({ open, onClose, onSubmit, mode, initialData }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
+ const handleSubmit = async () => {
+  if (!validateForm()) {
+    console.log("Validation failed", errors);
+    return;
+  }
 
-    setLoading(true);
-    try {
-      let finalLogo = formData.Logo;
-      
-      // If new logo file uploaded, convert to base64
-      if (logoFile) {
-        finalLogo = await convertToBase64(logoFile);
-      }
-
-      const payload = {
-        ...formData,
-        Logo: finalLogo
-      };
-
-      await onSubmit(payload);
-      resetForm();
-    } catch (err) {
-      console.error("Form submission error:", err);
-    } finally {
-      setLoading(false);
+  setLoading(true);
+  try {
+    let finalLogo = "";
+    
+    // Only convert to base64 if a new logo file was uploaded
+    if (logoFile) {
+      finalLogo = await convertToBase64(logoFile);
+    } else if (mode === "edit" && !isLogoChanged && formData.Logo) {
+      // If editing and logo wasn't changed, keep the existing logo
+      finalLogo = formData.Logo;
+    } else {
+      // For new records without logo or when logo is removed, send empty string
+      finalLogo = "";
     }
-  };
+
+    // Prepare the payload with proper data types
+    const payload = {
+      ...formData,
+      Logo: finalLogo,
+      // Convert empty strings to 0 for integer fields
+      DistrictID: formData.DistrictID ? parseInt(formData.DistrictID) : 0,
+      MunicipalityID: formData.MunicipalityID ? parseInt(formData.MunicipalityID) : 0,
+      ProvinceNo: formData.ProvinceNo ? parseInt(formData.ProvinceNo) : 0,
+      WadaNo: formData.WadaNo ? parseInt(formData.WadaNo) : 0
+    };
+
+    // Convert AllowApp to proper boolean-like value
+    if (typeof payload.AllowApp !== 'string') {
+      payload.AllowApp = payload.AllowApp ? "Y" : "N";
+    }
+
+    console.log("Submitting payload:", { 
+      ...payload, 
+      Logo: finalLogo ? "[BASE64_IMAGE]" : "EMPTY",
+      DistrictID: payload.DistrictID,
+      MunicipalityID: payload.MunicipalityID,
+      ProvinceNo: payload.ProvinceNo,
+      WadaNo: payload.WadaNo
+    });
+    
+    await onSubmit(payload);
+    resetForm();
+  } catch (err) {
+    console.error("Form submission error:", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const convertToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
+      reader.onload = () => {
+        // Extract only the base64 part (remove "data:image/png;base64," prefix)
+        const result = reader.result;
+        if (result && typeof result === 'string' && result.startsWith('data:')) {
+          const base64Data = result.split(',')[1];
+          resolve(base64Data);
+        } else {
+          resolve("");
+        }
+      };
       reader.onerror = (error) => reject(error);
     });
   };
@@ -243,14 +315,27 @@ const ToleForm = ({ open, onClose, onSubmit, mode, initialData }) => {
       }
       
       setLogoFile(file);
+      setIsLogoChanged(true);
       const previewUrl = URL.createObjectURL(file);
       setLogoPreview(previewUrl);
       setErrors(prev => ({ ...prev, Logo: "" }));
     }
   };
 
+  const handleRemoveLogo = () => {
+    setLogoFile(null);
+    setLogoPreview("");
+    setIsLogoChanged(true);
+    setFormData(prev => ({ ...prev, Logo: "" }));
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Only prevent editing ToleId in create mode (when it comes from localStorage)
+    if (name === "ToleId" && mode === "create") {
+      return; // Don't allow editing in create mode
+    }
     
     // Reset dependent fields when province/district changes
     if (name === "ProvinceNo") {
@@ -260,11 +345,20 @@ const ToleForm = ({ open, onClose, onSubmit, mode, initialData }) => {
         DistrictID: "", // Reset district
         MunicipalityID: "" // Reset municipality
       }));
+      setLookupData(prev => ({
+        ...prev,
+        districts: [],
+        municipalities: []
+      }));
     } else if (name === "DistrictID") {
       setFormData(prev => ({
         ...prev,
         [name]: value,
         MunicipalityID: "" // Reset municipality
+      }));
+      setLookupData(prev => ({
+        ...prev,
+        municipalities: []
       }));
     } else {
       setFormData(prev => ({
@@ -278,6 +372,37 @@ const ToleForm = ({ open, onClose, onSubmit, mode, initialData }) => {
       setErrors(prev => ({ ...prev, [name]: "" }));
     }
   };
+
+  // Check localStorage for ToleId when form opens
+useEffect(() => {
+  if (open) {
+    fetchProvinces();
+    if (mode === "edit" && initialData) {
+      const editData = { ...initialData };
+      
+      // Ensure numeric fields are strings for the form
+      editData.DistrictID = editData.DistrictID ? editData.DistrictID.toString() : "";
+      editData.MunicipalityID = editData.MunicipalityID ? editData.MunicipalityID.toString() : "";
+      editData.ProvinceNo = editData.ProvinceNo ? editData.ProvinceNo.toString() : "";
+      editData.WadaNo = editData.WadaNo ? editData.WadaNo.toString() : "";
+      
+      // Ensure date format is correct
+      if (editData.RegDate) {
+        editData.RegDate = editData.RegDate.split('T')[0];
+      }
+      if (editData.ExpiryDate) {
+        editData.ExpiryDate = editData.ExpiryDate.split('T')[0];
+      }
+      
+      setFormData(editData);
+      setLogoPreview(editData.Logo || "");
+      setIsLogoChanged(false);
+      setLogoFile(null);
+    } else {
+      resetForm();
+    }
+  }
+}, [open, mode, initialData]);
 
   return (
     <Dialog 
@@ -353,12 +478,27 @@ const ToleForm = ({ open, onClose, onSubmit, mode, initialData }) => {
                     </Avatar>
                   </IconButton>
                 </label>
+                {logoPreview && (
+                  <Button
+                    size="small"
+                    color="error"
+                    onClick={handleRemoveLogo}
+                    sx={{ mt: 1 }}
+                  >
+                    Remove Logo
+                  </Button>
+                )}
                 {errors.Logo && (
                   <FormHelperText error>{errors.Logo}</FormHelperText>
                 )}
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
                   Recommended: 200x200px, PNG/JPG
                 </Typography>
+                {mode === "edit" && !isLogoChanged && formData.Logo && (
+                  <FormHelperText sx={{ mt: 1 }}>
+                    Using existing logo. Upload new one to change.
+                  </FormHelperText>
+                )}
               </Box>
             </Grid>
 
@@ -379,8 +519,22 @@ const ToleForm = ({ open, onClose, onSubmit, mode, initialData }) => {
                 error={!!errors.ToleId}
                 helperText={errors.ToleId}
                 required
-                disabled={mode === "edit"}
+                disabled={mode === "create"}
+                placeholder={mode === "create" ? "Tole ID will be auto-filled" : "Enter Tole ID"}
+                InputProps={{
+                  readOnly: mode === "create",
+                }}
               />
+              {mode === "create" && !formData.ToleId && (
+                <FormHelperText error>
+                  Tole ID not found in localStorage. Please login again.
+                </FormHelperText>
+              )}
+              {mode === "create" && formData.ToleId && (
+                <FormHelperText>
+                  Tole ID auto-filled from your account
+                </FormHelperText>
+              )}
             </Grid>
 
             <Grid item xs={12} sm={6}>
@@ -393,6 +547,7 @@ const ToleForm = ({ open, onClose, onSubmit, mode, initialData }) => {
                 error={!!errors.Name}
                 helperText={errors.Name}
                 required
+                placeholder="Enter tole name"
               />
             </Grid>
 
@@ -408,6 +563,7 @@ const ToleForm = ({ open, onClose, onSubmit, mode, initialData }) => {
                 required
                 multiline
                 rows={2}
+                placeholder="Enter complete address"
               />
             </Grid>
 
@@ -429,8 +585,8 @@ const ToleForm = ({ open, onClose, onSubmit, mode, initialData }) => {
                 >
                   <MenuItem value="">Select Province</MenuItem>
                   {lookupData.provinces.map((province) => (
-                    <MenuItem key={province.ProvinceNo || province.id} value={province.ProvinceNo || province.id}>
-                      {province.ProvinceName || province.name}
+                    <MenuItem key={province.ProvinceID} value={province.ProvinceID}>
+                      {province.Province}
                     </MenuItem>
                   ))}
                 </Select>
@@ -455,8 +611,8 @@ const ToleForm = ({ open, onClose, onSubmit, mode, initialData }) => {
                 >
                   <MenuItem value="">Select District</MenuItem>
                   {lookupData.districts.map((district) => (
-                    <MenuItem key={district.DistrictID || district.id} value={district.DistrictID || district.id}>
-                      {district.DistrictName || district.name}
+                    <MenuItem key={district.DistrictID} value={district.DistrictID}>
+                      {district.DistrictName || district.District}
                     </MenuItem>
                   ))}
                 </Select>
@@ -480,8 +636,8 @@ const ToleForm = ({ open, onClose, onSubmit, mode, initialData }) => {
                 >
                   <MenuItem value="">Select Municipality</MenuItem>
                   {lookupData.municipalities.map((municipality) => (
-                    <MenuItem key={municipality.MunicipalityID || municipality.id} value={municipality.MunicipalityID || municipality.id}>
-                      {municipality.MunicipalityName || municipality.name}
+                    <MenuItem key={municipality.MunicipalityID} value={municipality.MunicipalityID}>
+                      {municipality.MunicipalityName || municipality.Municipality}
                     </MenuItem>
                   ))}
                 </Select>
@@ -496,6 +652,7 @@ const ToleForm = ({ open, onClose, onSubmit, mode, initialData }) => {
                 value={formData.WadaNo}
                 onChange={handleChange}
                 type="number"
+                placeholder="Enter ward number"
               />
             </Grid>
 
@@ -538,6 +695,7 @@ const ToleForm = ({ open, onClose, onSubmit, mode, initialData }) => {
                 error={!!errors.Contact}
                 helperText={errors.Contact}
                 required
+                placeholder="Enter contact number"
               />
             </Grid>
 
@@ -552,6 +710,7 @@ const ToleForm = ({ open, onClose, onSubmit, mode, initialData }) => {
                 error={!!errors.Email}
                 helperText={errors.Email}
                 required
+                placeholder="Enter email address"
               />
             </Grid>
 
@@ -651,7 +810,7 @@ const ToleForm = ({ open, onClose, onSubmit, mode, initialData }) => {
         <Button
           variant="contained"
           onClick={handleSubmit}
-          disabled={loading}
+          disabled={loading || (mode === "create" && !formData.ToleId)}
           sx={{
             background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
             px: 4,

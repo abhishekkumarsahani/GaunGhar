@@ -88,22 +88,37 @@ const ToleManagement = () => {
     fetchToes();
   }, []);
 
-  const fetchToes = async () => {
-    setLoading(true);
-    try {
-      const response = await toleApi.getToleList();
-      if (response.StatusCode === 200) {
-        setToes(response.toleLst || []);
-      } else {
-        setError(response.Message || "Failed to fetch toles");
-      }
-    } catch (err) {
-      console.error("Fetch error:", err);
-      setError("Failed to fetch tole data");
-    } finally {
-      setLoading(false);
+const fetchToes = async () => {
+  setLoading(true);
+  try {
+    const response = await toleApi.getToleList();
+
+    if (response.StatusCode === 200) {
+      const mappedData = (response.ToleLst || []).map(t => ({
+        ToleID: t.toleid,
+        Name: t.name,
+        Address: t.address,
+        District: t.district,
+        Logo: t.logo,
+        Email: t.email,
+        Contact: t.contact || "", // if exists later
+        ExpiryDate: t.expirydate,
+        AllowApp: t.allowapp,
+        CreatedDate: t.createddate
+      }));
+
+      setToes(mappedData);
+    } else {
+      setError(response.Message || "Failed to fetch toles");
     }
-  };
+  } catch (err) {
+    console.error("Fetch error:", err);
+    setError("Failed to fetch tole data");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleCreateTole = async (toleData) => {
     try {
@@ -154,49 +169,62 @@ const ToleManagement = () => {
     setConfirmOpen(false);
   };
 
-  const handleToggleAccess = async (allowApp) => {
-    if (!selectedTole) return;
-    try {
-      const userId = 1; // Get from auth context
-      const response = await toleApi.toggleToleAccess(
-        selectedTole.ToleID,
-        userId,
-        allowApp
-      );
-      if (response.StatusCode === 200) {
-        setSuccess(`Tole ${allowApp === 'Y' ? 'allowed' : 'disallowed'} successfully!`);
-        fetchToes();
-      } else {
-        setError(response.Message || "Failed to update access");
-      }
-    } catch (err) {
-      console.error("Toggle access error:", err);
-      setError("Failed to update access");
-    }
-    setConfirmOpen(false);
-  };
+const handleToggleAccess = async (allowApp) => {
+  if (!selectedTole) return;
 
-  const handleExtendExpiry = async (expiryDate) => {
-    if (!selectedTole) return;
-    try {
-      const userId = 1; // Get from auth context
-      const response = await toleApi.extendExpiry(
-        selectedTole.ToleID,
-        userId,
-        expiryDate
-      );
-      if (response.StatusCode === 200) {
-        setSuccess("Expiry date extended successfully!");
-        fetchToes();
-        setOpenExtend(false);
-      } else {
-        setError(response.Message || "Failed to extend expiry");
-      }
-    } catch (err) {
-      console.error("Extend expiry error:", err);
-      setError("Failed to extend expiry");
+  try {
+    // Make sure we pass "Y" or "N"
+    const response = await toleApi.toggleToleAccess(
+      selectedTole.ToleID,
+      allowApp ? "Y" : "N"  // if allowApp is true → "Y", else → "N"
+    );
+
+    if (response.StatusCode === 200) {
+      setSuccess(`Tole ${allowApp ? "allowed" : "disallowed"} successfully!`);
+      fetchToes();
+    } else {
+      setError(response.Message || "Failed to update access");
     }
-  };
+  } catch (err) {
+    console.error("Toggle access error:", err);
+    setError("Failed to update access");
+  }
+
+  setConfirmOpen(false);
+};
+
+
+const handleExtendExpiry = async (expiryDate) => {
+  if (!selectedTole) return;
+
+  try {
+    const userId = 1; // from auth later
+
+    // normalize date (optional but safe)
+    const formattedDate = new Date(expiryDate)
+      .toISOString()
+      .split("T")[0];
+
+    const response = await toleApi.extendExpiry({
+      ToleID: selectedTole.ToleID,
+      UserID: userId,
+      Flag: "ex",
+      ExpiryDate: formattedDate
+    });
+
+    if (response.StatusCode === 200) {
+      setSuccess("Expiry date extended successfully!");
+      fetchToes();
+      setOpenExtend(false);
+    } else {
+      setError(response.Message || "Failed to extend expiry");
+    }
+  } catch (err) {
+    console.error(err);
+    setError("Failed to extend expiry");
+  }
+};
+
 
   const handleOpenForm = (mode = "create", tole = null) => {
     setFormMode(mode);
