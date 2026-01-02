@@ -46,9 +46,9 @@ const menuItems = [
     color: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
   },
   {
-    text: "Orders",
+    text: "Helpline",
     icon: <ShoppingCart />,
-    path: "/admin/orders",
+    path: "/admin/helpline",
     color: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
   },
   {

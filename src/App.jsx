@@ -2,7 +2,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AdminLoginPage from "./pages/admin/AdminLoginPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
-import ToleManagement from "./pages/admin/ToleManagement";
+import ToleManagement from "./pages/admin/Tole";
+import HelpLine from "./pages/admin/Helpline";
 import ProtectedRoute from "./components/admin/ProtectedRoute";
 import MyProfile from "./pages/admin/MyProfile";
 
@@ -36,6 +37,14 @@ function App() {
           element={
             <ProtectedRoute>
               <ToleManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/helpline"
+          element={
+            <ProtectedRoute>
+              <HelpLine />
             </ProtectedRoute>
           }
         />
