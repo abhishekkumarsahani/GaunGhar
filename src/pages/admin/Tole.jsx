@@ -22,9 +22,10 @@ import {
   Alert,
   FormControl,
   InputLabel,
+  Chip,
 } from "@mui/material";
 
-import { Add, Edit, Delete } from "@mui/icons-material";
+import { Add, Edit, Delete, Info, CalendarToday } from "@mui/icons-material";
 
 import AdminLayout from "../../components/admin/AdminLayout";
 import { toleApi } from "../../api/toleApi";
@@ -56,9 +57,14 @@ const Tole = () => {
 
   const [rows, setRows] = useState([]);
   const [open, setOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [expiryOpen, setExpiryOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [toleInfo, setToleInfo] = useState(null);
+  const [selectedTole, setSelectedTole] = useState(null);
+  const [newExpiryDate, setNewExpiryDate] = useState("");
 
   const [province, setProvince] = useState([]);
   const [district, setDistrict] = useState([]);
@@ -85,9 +91,13 @@ const Tole = () => {
 
     const reader = new FileReader();
     reader.onload = () => {
+      const dataUrl = reader.result;
+      // Extract pure Base64 string (remove "data:image/...;base64," prefix)
+      const base64String = dataUrl.split(',')[1] || dataUrl;
+      
       setForm((prev) => ({
         ...prev,
-        Logo: reader.result, // ✅ BASE64
+        Logo: base64String, // ✅ PURE BASE64 (no Data URL prefix)
       }));
       setError("");
     };
@@ -113,9 +123,9 @@ const Tole = () => {
             ToleId: t.toleid, // Add this for edit
             Name: t.name,
             Address: t.address,
-            ProvinceNo: t.provinceno,
-            DistrictID: t.districtid,
-            MunicipalityID: t.municipalityid,
+            ProvinceNo: t.province,
+            DistrictID: t.district,
+            MunicipalityID: t.municipality,
             WadaNo: t.wadano,
             Contact: t.contact,
             Email: t.email,
@@ -170,7 +180,7 @@ const Tole = () => {
         setDistrict(res.RefLst || []);
         // Reset municipality when district changes
         setMunicipality([]);
-        setForm(prev => ({ ...prev, MunicipalityID: "" }));
+        setForm((prev) => ({ ...prev, MunicipalityID: "" }));
       }
     } catch (error) {
       console.error("Error loading districts:", error);
@@ -193,6 +203,95 @@ const Tole = () => {
       if (res?.StatusCode === 200) setMunicipality(res.RefLst || []);
     } catch (error) {
       console.error("Error loading municipalities:", error);
+    }
+  };
+
+  // ================= SHOW TOLES INFO =================
+  const handleShowInfo = async (toleId) => {
+    try {
+      setLoading(true);
+      const res = await toleApi({
+        ToleID: toleId,
+        Flag: "si",
+      });
+
+      if (res?.StatusCode === 200) {
+        const toleData = res.ToleLst?.[0];
+        if (toleData) {
+          setToleInfo({
+            ToleID: toleData.toleid,
+            Name: toleData.name,
+            Address: toleData.address,
+            Province: toleData.province,
+            District: toleData.district,
+            Municipality: toleData.municipality,
+            WadaNo: toleData.wadano,
+            Contact: toleData.contact,
+            Email: toleData.email,
+            Logo: toleData.logo,
+            About: toleData.about,
+            Website: toleData.website,
+            Fb: toleData.fb,
+            RegDate: toleData.regdate,
+            GoogLat: toleData.googlat,
+            GoogLong: toleData.googlong,
+            ExpiryDate: toleData.expirydate,
+            AllowApp: toleData.allowapp,
+          });
+          setInfoOpen(true);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading tole info:", error);
+      setError("Failed to load tole information");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ================= EXTEND EXPIRY =================
+  const handleOpenExtendExpiry = (tole) => {
+    setSelectedTole(tole);
+    // Set default new expiry date to current expiry date or tomorrow if none
+    const currentDate = tole.ExpiryDate || new Date().toISOString().split('T')[0];
+    setNewExpiryDate(currentDate);
+    setExpiryOpen(true);
+    setError("");
+  };
+
+  const handleExtendExpiry = async () => {
+    if (!newExpiryDate) {
+      setError("Please select a new expiry date");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await toleApi({
+        ToleID: selectedTole.ToleID,
+        UserID: user.UserID,
+        Flag: "ex",
+        ExpiryDate: newExpiryDate,
+      });
+
+      if (res.StatusCode !== 200) {
+        setError(res.Message || "Failed to extend expiry date");
+        return;
+      }
+
+      setExpiryOpen(false);
+      setSelectedTole(null);
+      setNewExpiryDate("");
+      loadToles();
+      
+      // Show success message
+      setError("Expiry date extended successfully");
+      setTimeout(() => setError(""), 3000);
+    } catch (error) {
+      console.error("Error extending expiry:", error);
+      setError("Failed to extend expiry date");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -336,6 +435,17 @@ const Tole = () => {
     setOpen(true);
   };
 
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
   return (
     <AdminLayout>
       <Box display="flex" justifyContent="space-between" mb={3}>
@@ -354,8 +464,12 @@ const Tole = () => {
         </Button>
       </Box>
 
-      {error && !open && (
-        <Alert severity="error" onClose={() => setError("")} sx={{ mb: 2 }}>
+      {error && !open && !expiryOpen && (
+        <Alert 
+          severity={error.includes("successfully") ? "success" : "error"} 
+          onClose={() => setError("")} 
+          sx={{ mb: 2 }}
+        >
           {error}
         </Alert>
       )}
@@ -396,10 +510,22 @@ const Tole = () => {
                       <img
                         src={row.Logo}
                         alt="logo"
-                        style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover' }}
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 6,
+                          objectFit: "cover",
+                        }}
                       />
                     ) : (
-                      <Box sx={{ width: 40, height: 40, bgcolor: 'grey.200', borderRadius: 1 }} />
+                      <Box
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          bgcolor: "grey.200",
+                          borderRadius: 1,
+                        }}
+                      />
                     )}
                   </TableCell>
 
@@ -415,7 +541,21 @@ const Tole = () => {
                   </TableCell>
                   <TableCell>{row.Contact}</TableCell>
                   <TableCell>{row.Email}</TableCell>
-                  <TableCell>{row.ExpiryDate || 'N/A'}</TableCell>
+                  <TableCell>
+                    <Box>
+                      <Typography variant="body2">
+                        {formatDate(row.ExpiryDate)}
+                      </Typography>
+                      {row.ExpiryDate && new Date(row.ExpiryDate) < new Date() && (
+                        <Chip 
+                          label="Expired" 
+                          color="error" 
+                          size="small"
+                          sx={{ mt: 0.5 }}
+                        />
+                      )}
+                    </Box>
+                  </TableCell>
 
                   <TableCell>
                     <Switch
@@ -425,6 +565,24 @@ const Tole = () => {
                   </TableCell>
 
                   <TableCell align="right">
+                    <IconButton 
+                      onClick={() => handleShowInfo(row.ToleID)} 
+                      size="small"
+                      color="info"
+                      title="View Details"
+                    >
+                      <Info fontSize="small" />
+                    </IconButton>
+
+                    <IconButton 
+                      onClick={() => handleOpenExtendExpiry(row)} 
+                      size="small"
+                      color="primary"
+                      title="Extend Expiry"
+                    >
+                      <CalendarToday fontSize="small" />
+                    </IconButton>
+
                     <IconButton onClick={() => handleEdit(row)} size="small">
                       <Edit fontSize="small" />
                     </IconButton>
@@ -444,14 +602,213 @@ const Tole = () => {
         </Table>
       </Paper>
 
-      {/* ================= MODAL ================= */}
-      <Dialog 
-        open={open} 
+      {/* ================= EXTEND EXPIRY MODAL ================= */}
+      <Dialog
+        open={expiryOpen}
+        onClose={() => setExpiryOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Extend Expiry Date</DialogTitle>
+        <DialogContent>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError("")}>
+              {error}
+            </Alert>
+          )}
+          
+          {selectedTole && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="body1" gutterBottom>
+                Extend expiry date for <strong>{selectedTole.Name}</strong>
+              </Typography>
+              
+              <Typography variant="body2" color="textSecondary" gutterBottom>
+                Current Tole ID: {selectedTole.ToleID}
+              </Typography>
+              
+              {selectedTole.ExpiryDate && (
+                <Typography variant="body2" color="textSecondary" gutterBottom>
+                  Current Expiry Date: {formatDate(selectedTole.ExpiryDate)}
+                </Typography>
+              )}
+              
+              <TextField
+                type="date"
+                label="New Expiry Date"
+                InputLabelProps={{ shrink: true }}
+                fullWidth
+                value={newExpiryDate}
+                onChange={(e) => setNewExpiryDate(e.target.value)}
+                sx={{ mt: 2 }}
+                required
+              />
+              
+              <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
+                Select a new expiry date for this tole
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setExpiryOpen(false);
+              setError("");
+            }}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button 
+            variant="contained" 
+            onClick={handleExtendExpiry} 
+            disabled={loading || !newExpiryDate}
+          >
+            {loading ? "Extending..." : "Extend Expiry"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ================= INFO MODAL ================= */}
+      <Dialog
+        open={infoOpen}
+        onClose={() => setInfoOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Tole Information</DialogTitle>
+        <DialogContent>
+          {toleInfo && (
+            <Box sx={{ mt: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                {toleInfo.Logo && (
+                  <img
+                    src={toleInfo.Logo}
+                    alt="logo"
+                    style={{
+                      width: 80,
+                      height: 80,
+                      borderRadius: 8,
+                      objectFit: "cover",
+                      marginRight: 16,
+                    }}
+                  />
+                )}
+                <Box>
+                  <Typography variant="h6" gutterBottom>
+                    {toleInfo.Name}
+                  </Typography>
+                  <Chip 
+                    label={toleInfo.AllowApp === "Y" ? "Active" : "Inactive"} 
+                    color={toleInfo.AllowApp === "Y" ? "success" : "error"}
+                    size="small"
+                  />
+                </Box>
+              </Box>
+
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <Typography variant="subtitle2" color="textSecondary">Tole ID</Typography>
+                  <Typography variant="body1">{toleInfo.ToleID}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="subtitle2" color="textSecondary">Contact</Typography>
+                  <Typography variant="body1">{toleInfo.Contact}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="subtitle2" color="textSecondary">Email</Typography>
+                  <Typography variant="body1">{toleInfo.Email}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="subtitle2" color="textSecondary">Registration Date</Typography>
+                  <Typography variant="body1">{formatDate(toleInfo.RegDate)}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="subtitle2" color="textSecondary">Expiry Date</Typography>
+                  <Typography variant="body1">
+                    {formatDate(toleInfo.ExpiryDate)}
+                    {toleInfo.ExpiryDate && new Date(toleInfo.ExpiryDate) < new Date() && (
+                      <Chip 
+                        label="Expired" 
+                        color="error" 
+                        size="small"
+                        sx={{ ml: 1 }}
+                      />
+                    )}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="subtitle2" color="textSecondary">Wada No</Typography>
+                  <Typography variant="body1">{toleInfo.WadaNo || "N/A"}</Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2" color="textSecondary">Address</Typography>
+                  <Typography variant="body1">{toleInfo.Address}</Typography>
+                </Grid>
+                <Grid item xs={4}>
+                  <Typography variant="subtitle2" color="textSecondary">Province</Typography>
+                  <Typography variant="body1">{toleInfo.Province}</Typography>
+                </Grid>
+                <Grid item xs={4}>
+                  <Typography variant="subtitle2" color="textSecondary">District</Typography>
+                  <Typography variant="body1">{toleInfo.District}</Typography>
+                </Grid>
+                <Grid item xs={4}>
+                  <Typography variant="subtitle2" color="textSecondary">Municipality</Typography>
+                  <Typography variant="body1">{toleInfo.Municipality}</Typography>
+                </Grid>
+                {toleInfo.Website && (
+                  <Grid item xs={6}>
+                    <Typography variant="subtitle2" color="textSecondary">Website</Typography>
+                    <Typography variant="body1">
+                      <a href={toleInfo.Website} target="_blank" rel="noopener noreferrer">
+                        {toleInfo.Website}
+                      </a>
+                    </Typography>
+                  </Grid>
+                )}
+                {toleInfo.Fb && (
+                  <Grid item xs={6}>
+                    <Typography variant="subtitle2" color="textSecondary">Facebook</Typography>
+                    <Typography variant="body1">
+                      <a href={toleInfo.Fb} target="_blank" rel="noopener noreferrer">
+                        {toleInfo.Fb}
+                      </a>
+                    </Typography>
+                  </Grid>
+                )}
+                {toleInfo.GoogLat && toleInfo.GoogLong && toleInfo.GoogLat !== "0" && toleInfo.GoogLong !== "0" && (
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="textSecondary">Coordinates</Typography>
+                    <Typography variant="body1">
+                      {toleInfo.GoogLat}, {toleInfo.GoogLong}
+                    </Typography>
+                  </Grid>
+                )}
+                {toleInfo.About && (
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="textSecondary">About</Typography>
+                    <Typography variant="body1">{toleInfo.About}</Typography>
+                  </Grid>
+                )}
+              </Grid>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setInfoOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ================= EDIT/CREATE MODAL ================= */}
+      <Dialog
+        open={open}
         onClose={() => {
           setOpen(false);
           setError("");
-        }} 
-        maxWidth="md" 
+        }}
+        maxWidth="md"
         fullWidth
       >
         <DialogTitle>{editData ? "Update Tole" : "Create Tole"}</DialogTitle>
@@ -524,12 +881,14 @@ const Tole = () => {
                 <Select
                   value={form.ProvinceNo}
                   label="Province"
-                  onChange={(e) => setForm({ ...form, ProvinceNo: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, ProvinceNo: e.target.value })
+                  }
                 >
                   <MenuItem value="">Select Province</MenuItem>
                   {province.map((p) => (
-                    <MenuItem key={p.RefID} value={p.RefID}>
-                      {p.RefName}
+                    <MenuItem key={p.ProvinceID} value={p.ProvinceID}>
+                      {p.Province}
                     </MenuItem>
                   ))}
                 </Select>
@@ -542,13 +901,15 @@ const Tole = () => {
                 <Select
                   value={form.DistrictID}
                   label="District"
-                  onChange={(e) => setForm({ ...form, DistrictID: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, DistrictID: e.target.value })
+                  }
                   disabled={!form.ProvinceNo}
                 >
                   <MenuItem value="">Select District</MenuItem>
                   {district.map((d) => (
-                    <MenuItem key={d.RefID} value={d.RefID}>
-                      {d.RefName}
+                    <MenuItem key={d.DistrictID} value={d.DistrictID}>
+                      {d.District}
                     </MenuItem>
                   ))}
                 </Select>
@@ -561,13 +922,15 @@ const Tole = () => {
                 <Select
                   value={form.MunicipalityID}
                   label="Municipality"
-                  onChange={(e) => setForm({ ...form, MunicipalityID: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, MunicipalityID: e.target.value })
+                  }
                   disabled={!form.DistrictID}
                 >
                   <MenuItem value="">Select Municipality</MenuItem>
                   {municipality.map((m) => (
-                    <MenuItem key={m.RefID} value={m.RefID}>
-                      {m.RefName}
+                    <MenuItem key={m.MunicipalityID} value={m.MunicipalityID}>
+                      {m.Municipality}
                     </MenuItem>
                   ))}
                 </Select>
@@ -662,9 +1025,9 @@ const Tole = () => {
               <TextField
                 type="file"
                 fullWidth
-                inputProps={{ 
+                inputProps={{
                   accept: "image/*",
-                  onChange: handleLogoUpload
+                  onChange: handleLogoUpload,
                 }}
                 onChange={handleLogoUpload}
               />
@@ -673,7 +1036,12 @@ const Tole = () => {
                   <img
                     src={form.Logo}
                     alt="preview"
-                    style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 4 }}
+                    style={{
+                      width: 80,
+                      height: 80,
+                      objectFit: "cover",
+                      borderRadius: 4,
+                    }}
                   />
                 </Box>
               )}
@@ -682,7 +1050,7 @@ const Tole = () => {
         </DialogContent>
 
         <DialogActions>
-          <Button 
+          <Button
             onClick={() => {
               setOpen(false);
               setError("");
@@ -691,11 +1059,7 @@ const Tole = () => {
           >
             Cancel
           </Button>
-          <Button 
-            variant="contained" 
-            onClick={handleSave}
-            disabled={loading}
-          >
+          <Button variant="contained" onClick={handleSave} disabled={loading}>
             {loading ? "Saving..." : "Save"}
           </Button>
         </DialogActions>

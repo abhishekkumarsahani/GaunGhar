@@ -52,9 +52,9 @@ const menuItems = [
     color: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
   },
   {
-    text: "Categories",
+    text: "Slider",
     icon: <Category />,
-    path: "/admin/categories",
+    path: "/admin/slider",
     color: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
   },
   {
