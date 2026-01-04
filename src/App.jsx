@@ -6,6 +6,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import ToleManagement from "./pages/admin/Tole";
 import HelpLine from "./pages/admin/Helpline";
 import Slider from "./pages/admin/Slider";
+import Event from "./pages/admin/Event";
 import MyProfile from "./pages/admin/MyProfile";
 import ProtectedRoute from "./components/admin/ProtectedRoute";
 
@@ -21,6 +22,7 @@ function App() {
         <Route path="/admin/helpline" element={<ProtectedRoute><HelpLine /></ProtectedRoute>} />
         <Route path="/admin/profile" element={<ProtectedRoute><MyProfile /></ProtectedRoute>} />
         <Route path="/admin/slider" element={<ProtectedRoute><Slider /></ProtectedRoute>} />
+        <Route path="/admin/event" element={<ProtectedRoute><Event /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );

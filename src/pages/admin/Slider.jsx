@@ -39,7 +39,8 @@ import {
 import AdminLayout from "../../components/admin/AdminLayout";
 import { sliderApi } from "../../api/sliderApi";
 
-const BASE_IMAGE_URL = "https://yourdomain.com/photo/slider/"; // Replace with your server's image URL
+// Use relative path or absolute URL to your server images
+const BASE_IMAGE_URL = "/photo/slider/"; // Assuming images are served from this relative path
 
 const Slider = () => {
   const user = JSON.parse(localStorage.getItem("adminUser"))?.loginLst?.[0];
@@ -279,29 +280,44 @@ const Slider = () => {
     }
   };
 
-  // 🔹 Convert API ImgUrl to displayable image
+  // 🔹 Convert API ImgUrl to displayable image - FIXED VERSION
   const getImageUrl = (imgUrl) => {
     if (!imgUrl) return null;
 
+    // If it's already a data URL (base64), return as is
     if (imgUrl.startsWith("data:")) return imgUrl;
-    if (imgUrl.length > 100 && !imgUrl.includes("/") && !imgUrl.includes("\\")) {
+
+    // If it's base64 string (long string without special characters)
+    if (imgUrl.length > 100 && !imgUrl.includes("/") && !imgUrl.includes("\\") && !imgUrl.startsWith("http")) {
       return `data:image/jpeg;base64,${imgUrl}`;
     }
 
-    // Convert Windows path to public URL
-    if (imgUrl.includes("photo\\photo/slider") || imgUrl.includes("photo/photo/slider")) {
-      const fileName = imgUrl.split(/[/\\]/).pop();
-      return `${BASE_IMAGE_URL}${fileName}`;
+    // If it's already a valid URL
+    if (imgUrl.startsWith("http://") || imgUrl.startsWith("https://") || imgUrl.startsWith("/")) {
+      return imgUrl;
     }
 
+    // If it's a local file path (Windows or Unix), extract filename and use relative path
+    if (imgUrl.includes("\\") || imgUrl.includes("/")) {
+      // Extract just the filename
+      const fileName = imgUrl.replace(/^.*[\\/]/, "");
+      if (fileName) {
+        return `${BASE_IMAGE_URL}${fileName}`;
+      }
+    }
+
+    // Default fallback
     return null;
   };
 
   // 🔹 Preview image
   const handlePreview = (imgUrl) => {
     const url = getImageUrl(imgUrl);
-    if (url) setImagePreview(url);
-    else setError("Cannot preview image. Please re-upload.");
+    if (url) {
+      setImagePreview(url);
+    } else {
+      setError("Cannot preview image. The image format is not supported.");
+    }
   };
 
   return (
@@ -319,10 +335,10 @@ const Slider = () => {
         </Alert>
       )}
 
-      <Paper>
+      <Paper sx={{ overflow: 'hidden' }}>
         <Table>
           <TableHead>
-            <TableRow>
+            <TableRow sx={{ backgroundColor: 'primary.main' }}>
               <TableCell width="60">Preview</TableCell>
               <TableCell>Title</TableCell>
               <TableCell>Order</TableCell>
@@ -350,14 +366,36 @@ const Slider = () => {
                       <Tooltip title="Click to preview">
                         <Box
                           onClick={() => handlePreview(row.ImgUrl)}
-                          sx={{ width: 50, height: 50, borderRadius: 1, overflow: "hidden", cursor: img ? "pointer" : "default" }}
+                          sx={{ 
+                            width: 50, 
+                            height: 50, 
+                            borderRadius: 1, 
+                            overflow: "hidden", 
+                            cursor: img ? "pointer" : "default",
+                            bgcolor: 'grey.100',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
                         >
                           {img ? (
-                            <img src={img} alt={row.Title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            <img 
+                              src={img} 
+                              alt={row.Title} 
+                              style={{ 
+                                width: "100%", 
+                                height: "100%", 
+                                objectFit: "cover" 
+                              }}
+                              onError={(e) => {
+                                // If image fails to load, show placeholder
+                                e.target.style.display = 'none';
+                              }}
+                            />
                           ) : (
-                            <Box sx={{ width: "100%", height: "100%", bgcolor: "grey.200", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                              <Typography variant="caption" color="textSecondary">No Image</Typography>
-                            </Box>
+                            <Typography variant="caption" color="textSecondary">
+                              No Image
+                            </Typography>
                           )}
                         </Box>
                       </Tooltip>
@@ -367,10 +405,18 @@ const Slider = () => {
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                         <Typography>{row.ImgOrder}</Typography>
                         <Box sx={{ display: "flex", flexDirection: "column" }}>
-                          <IconButton size="small" disabled={row.ImgOrder <= 1} onClick={() => handleMoveOrder(row.SliderID, "up")}>
+                          <IconButton 
+                            size="small" 
+                            disabled={row.ImgOrder <= 1} 
+                            onClick={() => handleMoveOrder(row.SliderID, "up")}
+                          >
                             <ArrowUpward fontSize="small" />
                           </IconButton>
-                          <IconButton size="small" disabled={row.ImgOrder >= rows.length} onClick={() => handleMoveOrder(row.SliderID, "down")}>
+                          <IconButton 
+                            size="small" 
+                            disabled={row.ImgOrder >= rows.length} 
+                            onClick={() => handleMoveOrder(row.SliderID, "down")}
+                          >
                             <ArrowDownward fontSize="small" />
                           </IconButton>
                         </Box>
@@ -381,35 +427,72 @@ const Slider = () => {
                         <Tooltip title={row.RedUrl}>
                           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                             <LinkIcon fontSize="small" color="primary" />
-                            <Typography sx={{ maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.RedUrl}</Typography>
+                            <Typography 
+                              sx={{ 
+                                maxWidth: 150, 
+                                overflow: "hidden", 
+                                textOverflow: "ellipsis", 
+                                whiteSpace: "nowrap" 
+                              }}
+                            >
+                              {row.RedUrl}
+                            </Typography>
                           </Box>
                         </Tooltip>
-                      ) : <Typography color="textSecondary">No URL</Typography>}
+                      ) : (
+                        <Typography color="textSecondary">No URL</Typography>
+                      )}
                     </TableCell>
                     <TableCell>
-                      <Switch checked={row.IsActive === "A"} onChange={() => toggleStatus(row.SliderID)} />
-                      <Chip label={row.IsActive === "A" ? "Active" : "Inactive"} color={row.IsActive === "A" ? "success" : "error"} size="small" sx={{ ml: 1 }} />
+                      <Switch 
+                        checked={row.IsActive === "A"} 
+                        onChange={() => toggleStatus(row.SliderID)} 
+                      />
+                      <Chip 
+                        label={row.IsActive === "A" ? "Active" : "Inactive"} 
+                        color={row.IsActive === "A" ? "success" : "error"} 
+                        size="small" 
+                        sx={{ ml: 1 }} 
+                      />
                     </TableCell>
                     <TableCell align="right">
                       <Tooltip title="Preview">
                         <span>
-                          <IconButton size="small" color="info" onClick={() => handlePreview(row.ImgUrl)} disabled={!img}>
+                          <IconButton 
+                            size="small" 
+                            color="info" 
+                            onClick={() => handlePreview(row.ImgUrl)} 
+                            disabled={!img}
+                          >
                             <Visibility fontSize="small" />
                           </IconButton>
                         </span>
                       </Tooltip>
                       <Tooltip title="Edit">
-                        <IconButton size="small" onClick={() => {
-                          setEditData(row);
-                          setForm({ Title: row.Title, ImgUrl: row.ImgUrl, RedUrl: row.RedUrl, ImgOrder: row.ImgOrder.toString(), IsActive: row.IsActive });
-                          setImagePreview(getImageUrl(row.ImgUrl) || "");
-                          setOpen(true);
-                        }}>
+                        <IconButton 
+                          size="small" 
+                          onClick={() => {
+                            setEditData(row);
+                            setForm({ 
+                              Title: row.Title, 
+                              ImgUrl: row.ImgUrl, 
+                              RedUrl: row.RedUrl, 
+                              ImgOrder: row.ImgOrder.toString(), 
+                              IsActive: row.IsActive 
+                            });
+                            setImagePreview(getImageUrl(row.ImgUrl) || "");
+                            setOpen(true);
+                          }}
+                        >
                           <Edit fontSize="small" />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Delete">
-                        <IconButton size="small" color="error" onClick={() => handleDelete(row.SliderID)}>
+                        <IconButton 
+                          size="small" 
+                          color="error" 
+                          onClick={() => handleDelete(row.SliderID)}
+                        >
                           <Delete fontSize="small" />
                         </IconButton>
                       </Tooltip>
@@ -423,13 +506,30 @@ const Slider = () => {
       </Paper>
 
       {/* ================= PREVIEW MODAL ================= */}
-      <Dialog open={!!imagePreview && !open} onClose={() => setImagePreview("")} maxWidth="md">
+      <Dialog 
+        open={!!imagePreview && !open} 
+        onClose={() => setImagePreview("")} 
+        maxWidth="md"
+      >
         <DialogTitle>Image Preview</DialogTitle>
         <DialogContent>
           <Box sx={{ textAlign: "center", p: 2 }}>
             {imagePreview ? (
-              <img src={imagePreview} alt="Preview" style={{ maxWidth: "100%", maxHeight: "60vh", objectFit: "contain" }} />
-            ) : <Typography color="textSecondary">No image to preview</Typography>}
+              <img 
+                src={imagePreview} 
+                alt="Preview" 
+                style={{ 
+                  maxWidth: "100%", 
+                  maxHeight: "60vh", 
+                  objectFit: "contain" 
+                }}
+                onError={(e) => {
+                  e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%23f5f5f5'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23999'%3EImage not available%3C/text%3E%3C/svg%3E";
+                }}
+              />
+            ) : (
+              <Typography color="textSecondary">No image to preview</Typography>
+            )}
           </Box>
         </DialogContent>
         <DialogActions>
@@ -438,27 +538,110 @@ const Slider = () => {
       </Dialog>
 
       {/* ================= CREATE/EDIT MODAL ================= */}
-      <Dialog open={open} onClose={() => { setOpen(false); setError(""); }} maxWidth="md" fullWidth>
+      <Dialog 
+        open={open} 
+        onClose={() => { setOpen(false); setError(""); }} 
+        maxWidth="md" 
+        fullWidth
+      >
         <DialogTitle>{editData ? "Update Slider" : "Add Slider"}</DialogTitle>
         <DialogContent>
-          {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError("")}>{error}</Alert>}
+          {error && (
+            <Alert 
+              severity="error" 
+              sx={{ mb: 2 }} 
+              onClose={() => setError("")}
+            >
+              {error}
+            </Alert>
+          )}
           <Grid container spacing={3} mt={1}>
             <Grid item xs={12}>
-              <TextField label="Title *" fullWidth value={form.Title} onChange={e => setForm({ ...form, Title: e.target.value })} helperText="Enter a descriptive title for the slider" />
+              <TextField 
+                label="Title *" 
+                fullWidth 
+                value={form.Title} 
+                onChange={e => setForm({ ...form, Title: e.target.value })} 
+                helperText="Enter a descriptive title for the slider" 
+              />
             </Grid>
             <Grid item xs={12}>
-              <Typography variant="subtitle2" gutterBottom>{editData ? "Replace Image (optional)" : "Upload Image *"}</Typography>
-              <TextField type="file" fullWidth inputProps={{ accept: "image/*" }} onChange={handleImageUpload} helperText={editData ? "Leave empty to keep existing image" : "Upload an image (max 2MB)"}/>
-              {imagePreview && <Box mt={2} sx={{ textAlign: "center" }}><img src={imagePreview} alt="Preview" style={{ maxWidth: "100%", maxHeight: 200, objectFit: "contain", borderRadius: 4, border: "1px solid #ddd" }} /></Box>}
+              <Typography variant="subtitle2" gutterBottom>
+                {editData ? "Replace Image (optional)" : "Upload Image *"}
+              </Typography>
+              <TextField 
+                type="file" 
+                fullWidth 
+                inputProps={{ accept: "image/*" }} 
+                onChange={handleImageUpload} 
+                helperText={editData ? "Leave empty to keep existing image" : "Upload an image (max 2MB)"}
+              />
+              {imagePreview && (
+                <Box mt={2} sx={{ textAlign: "center" }}>
+                  <img 
+                    src={imagePreview} 
+                    alt="Preview" 
+                    style={{ 
+                      maxWidth: "100%", 
+                      maxHeight: 200, 
+                      objectFit: "contain", 
+                      borderRadius: 4, 
+                      border: "1px solid #ddd" 
+                    }} 
+                  />
+                </Box>
+              )}
             </Grid>
-            <Grid item xs={12}><TextField label="Redirect URL" fullWidth value={form.RedUrl} onChange={e => setForm({ ...form, RedUrl: e.target.value })} placeholder="https://example.com" helperText="Optional: URL to redirect when slider is clicked" /></Grid>
-            <Grid item xs={6}><TextField label="Image Order *" type="number" fullWidth value={form.ImgOrder} onChange={e => setForm({ ...form, ImgOrder: e.target.value })} helperText="Determines display order (1 = first)" inputProps={{ min: 1 }} /></Grid>
-            <Grid item xs={6}><FormControl fullWidth><InputLabel>Status</InputLabel><Select value={form.IsActive} label="Status" onChange={e => setForm({ ...form, IsActive: e.target.value })}><MenuItem value="A">Active</MenuItem><MenuItem value="I">Inactive</MenuItem></Select></FormControl></Grid>
+            <Grid item xs={12}>
+              <TextField 
+                label="Redirect URL" 
+                fullWidth 
+                value={form.RedUrl} 
+                onChange={e => setForm({ ...form, RedUrl: e.target.value })} 
+                placeholder="https://example.com" 
+                helperText="Optional: URL to redirect when slider is clicked" 
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField 
+                label="Image Order *" 
+                type="number" 
+                fullWidth 
+                value={form.ImgOrder} 
+                onChange={e => setForm({ ...form, ImgOrder: e.target.value })} 
+                helperText="Determines display order (1 = first)" 
+                inputProps={{ min: 1 }} 
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select 
+                  value={form.IsActive} 
+                  label="Status" 
+                  onChange={e => setForm({ ...form, IsActive: e.target.value })}
+                >
+                  <MenuItem value="A">Active</MenuItem>
+                  <MenuItem value="I">Inactive</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setOpen(false); setError(""); }} disabled={loading}>Cancel</Button>
-          <Button variant="contained" onClick={handleSave} disabled={loading}>{loading ? "Saving..." : "Save"}</Button>
+          <Button 
+            onClick={() => { setOpen(false); setError(""); }} 
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button 
+            variant="contained" 
+            onClick={handleSave} 
+            disabled={loading}
+          >
+            {loading ? "Saving..." : "Save"}
+          </Button>
         </DialogActions>
       </Dialog>
     </AdminLayout>

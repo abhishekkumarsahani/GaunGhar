@@ -58,9 +58,9 @@ const menuItems = [
     color: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
   },
   {
-    text: "Shipping",
+    text: "Event",
     icon: <LocalShipping />,
-    path: "/admin/shipping",
+    path: "/admin/event",
     color: "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
   },
   {

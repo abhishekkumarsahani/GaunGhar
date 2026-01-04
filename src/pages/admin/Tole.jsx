@@ -45,11 +45,85 @@ const emptyForm = {
   About: "",
   Website: "",
   Fb: "",
-  RegDate: new Date().toISOString().split("T")[0], // Default to today
+  RegDate: new Date().toISOString().split("T")[0],
   GoogLat: "",
   GoogLong: "",
   AllowApp: "A",
   ExpiryDate: "",
+};
+
+// Helper function to get image URL
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return "";
+  
+  // If it's already a Data URL, return as-is
+  if (imagePath.startsWith('data:image')) {
+    return imagePath;
+  }
+  
+  // If it's a file path, serve it through backend
+  if (imagePath.includes('://')) {
+    // Already a URL
+    return imagePath;
+  }
+  
+  // Convert file path to URL by serving through backend
+  // You'll need to create a backend endpoint to serve these files
+  // For now, we'll try to construct a URL based on the path
+  const filename = imagePath.split('/').pop() || imagePath.split('\\').pop();
+  
+  // IMPORTANT: You need to create a backend endpoint like:
+  // /api/images?path=C:/A%20Easy%20Software/photo/photo/tole/639029951601792530.jpg
+  // OR store images in a public directory and use relative paths
+  
+  // For now, we'll assume images are in a public directory
+  // Adjust this based on your actual setup
+  if (filename) {
+    return `/api/images/${encodeURIComponent(imagePath)}`;
+  }
+  
+  return "";
+};
+
+// Fallback image component
+const ImageWithFallback = ({ src, alt, fallback, width = 40, height = 40, borderRadius = 6, ...props }) => {
+  const [error, setError] = useState(false);
+
+  if (error || !src) {
+    return fallback || (
+      <Box
+        sx={{
+          width: width,
+          height: height,
+          bgcolor: "grey.200",
+          borderRadius: borderRadius,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Typography variant="caption" color="textSecondary">
+          No Image
+        </Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <img
+      src={getImageUrl(src)}
+      alt={alt}
+      onError={() => setError(true)}
+      style={{
+        width: width,
+        height: height,
+        borderRadius: borderRadius,
+        objectFit: "cover",
+        ...props.style,
+      }}
+      {...props}
+    />
+  );
 };
 
 const Tole = () => {
@@ -71,13 +145,14 @@ const Tole = () => {
   const [municipality, setMunicipality] = useState([]);
 
   const [form, setForm] = useState(emptyForm);
+  const [logoFile, setLogoFile] = useState(null);
 
-  // ================= LOGO UPLOAD (BASE64) =================
+  // ================= LOGO UPLOAD =================
   const handleLogoUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file size (e.g., max 2MB)
+    // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       setError("Image size should be less than 2MB");
       return;
@@ -92,13 +167,11 @@ const Tole = () => {
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = reader.result;
-      // Extract pure Base64 string (remove "data:image/...;base64," prefix)
-      const base64String = dataUrl.split(',')[1] || dataUrl;
-      
       setForm((prev) => ({
         ...prev,
-        Logo: base64String, // ✅ PURE BASE64 (no Data URL prefix)
+        Logo: dataUrl, // Store as Data URL for preview
       }));
+      setLogoFile(file); // Store the file object for upload
       setError("");
     };
     reader.onerror = () => {
@@ -120,7 +193,7 @@ const Tole = () => {
         setRows(
           res.ToleLst?.map((t) => ({
             ToleID: t.toleid,
-            ToleId: t.toleid, // Add this for edit
+            ToleId: t.toleid,
             Name: t.name,
             Address: t.address,
             ProvinceNo: t.province,
@@ -129,7 +202,7 @@ const Tole = () => {
             WadaNo: t.wadano,
             Contact: t.contact,
             Email: t.email,
-            Logo: t.logo,
+            Logo: t.logo, // This is a file path like "C:/A Easy Software/photo/photo/tole/639029951601792530.jpg"
             About: t.about,
             Website: t.website,
             Fb: t.fb,
@@ -178,7 +251,6 @@ const Tole = () => {
       });
       if (res?.StatusCode === 200) {
         setDistrict(res.RefLst || []);
-        // Reset municipality when district changes
         setMunicipality([]);
         setForm((prev) => ({ ...prev, MunicipalityID: "" }));
       }
@@ -228,7 +300,7 @@ const Tole = () => {
             WadaNo: toleData.wadano,
             Contact: toleData.contact,
             Email: toleData.email,
-            Logo: toleData.logo,
+            Logo: toleData.logo, // File path
             About: toleData.about,
             Website: toleData.website,
             Fb: toleData.fb,
@@ -252,7 +324,6 @@ const Tole = () => {
   // ================= EXTEND EXPIRY =================
   const handleOpenExtendExpiry = (tole) => {
     setSelectedTole(tole);
-    // Set default new expiry date to current expiry date or tomorrow if none
     const currentDate = tole.ExpiryDate || new Date().toISOString().split('T')[0];
     setNewExpiryDate(currentDate);
     setExpiryOpen(true);
@@ -284,7 +355,6 @@ const Tole = () => {
       setNewExpiryDate("");
       loadToles();
       
-      // Show success message
       setError("Expiry date extended successfully");
       setTimeout(() => setError(""), 3000);
     } catch (error) {
@@ -302,19 +372,46 @@ const Tole = () => {
     }
   }, []);
 
-  // Effect for loading district when province changes
   useEffect(() => {
     if (form.ProvinceNo) {
       loadDistrict(form.ProvinceNo);
     }
   }, [form.ProvinceNo]);
 
-  // Effect for loading municipality when district changes
   useEffect(() => {
     if (form.ProvinceNo && form.DistrictID) {
       loadMunicipality(form.ProvinceNo, form.DistrictID);
     }
   }, [form.DistrictID]);
+
+  // ================= UPLOAD LOGO TO SERVER =================
+  const uploadLogoToServer = async (file) => {
+    if (!file) return "";
+    
+    // Create FormData for file upload
+    const formData = new FormData();
+    formData.append('logo', file);
+    formData.append('toleId', form.ToleId || editData?.ToleID);
+    formData.append('userId', user.UserID);
+
+    try {
+      // You need to create this endpoint in your backend
+      const response = await fetch('/api/upload-logo', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Logo upload failed');
+      }
+      
+      const data = await response.json();
+      return data.filePath; // Return the server path
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      return "";
+    }
+  };
 
   // ================= SAVE (CREATE / UPDATE) =================
   const handleSave = async () => {
@@ -329,9 +426,24 @@ const Tole = () => {
       return;
     }
 
+    let logoPath = form.Logo;
+
+    // If a new logo file was uploaded, upload it to server
+    if (logoFile) {
+      logoPath = await uploadLogoToServer(logoFile);
+      if (!logoPath && form.Logo) {
+        // If upload failed but we have an existing logo, keep it
+        logoPath = editData?.Logo || "";
+      }
+    } else if (editData && form.Logo && form.Logo.startsWith('data:image')) {
+      // This means the existing logo is being displayed as Data URL
+      // Keep the original path from editData
+      logoPath = editData.Logo;
+    }
+
     const payload = {
       ToleId: editData ? editData.ToleID : form.ToleId,
-      Flag: editData ? "U" : "i", // Note: "i" should be lowercase in payload
+      Flag: editData ? "U" : "i",
       Name: form.Name,
       Address: form.Address,
       ProvinceNo: Number(form.ProvinceNo),
@@ -340,7 +452,7 @@ const Tole = () => {
       WadaNo: form.WadaNo ? Number(form.WadaNo) : 0,
       Contact: form.Contact,
       Email: form.Email,
-      Logo: form.Logo || "",
+      Logo: logoPath || "",
       About: form.About || "",
       Website: form.Website || "",
       Fb: form.Fb || "",
@@ -367,6 +479,7 @@ const Tole = () => {
       setOpen(false);
       setEditData(null);
       setForm(emptyForm);
+      setLogoFile(null);
       loadToles();
     } catch (error) {
       console.error("Error saving tole:", error);
@@ -412,6 +525,10 @@ const Tole = () => {
   // Handle edit
   const handleEdit = (row) => {
     setEditData(row);
+    setLogoFile(null);
+    
+    // For existing logos that are file paths, we'll just show a placeholder
+    // The actual image will load via the ImageWithFallback component
     setForm({
       ToleId: row.ToleId || row.ToleID,
       Name: row.Name || "",
@@ -422,7 +539,7 @@ const Tole = () => {
       WadaNo: row.WadaNo?.toString() || "",
       Contact: row.Contact || "",
       Email: row.Email || "",
-      Logo: row.Logo || "",
+      Logo: row.Logo || "", // Keep as file path
       About: row.About || "",
       Website: row.Website || "",
       Fb: row.Fb || "",
@@ -456,6 +573,7 @@ const Tole = () => {
           onClick={() => {
             setEditData(null);
             setForm(emptyForm);
+            setLogoFile(null);
             setOpen(true);
             setError("");
           }}
@@ -475,10 +593,10 @@ const Tole = () => {
       )}
 
       {/* ================= LIST ================= */}
-      <Paper>
+      <Paper sx={{ overflow: 'hidden' }}>
         <Table>
           <TableHead>
-            <TableRow>
+            <TableRow sx={{ backgroundColor: 'primary.main' }}>
               <TableCell>Logo</TableCell>
               <TableCell>Tole</TableCell>
               <TableCell>Contact</TableCell>
@@ -504,29 +622,15 @@ const Tole = () => {
               </TableRow>
             ) : (
               rows.map((row) => (
-                <TableRow key={row.ToleID}>
+                <TableRow key={row.ToleID} hover>
                   <TableCell>
-                    {row.Logo ? (
-                      <img
-                        src={row.Logo}
-                        alt="logo"
-                        style={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: 6,
-                          objectFit: "cover",
-                        }}
-                      />
-                    ) : (
-                      <Box
-                        sx={{
-                          width: 40,
-                          height: 40,
-                          bgcolor: "grey.200",
-                          borderRadius: 1,
-                        }}
-                      />
-                    )}
+                    <ImageWithFallback
+                      src={row.Logo}
+                      alt="logo"
+                      width={40}
+                      height={40}
+                      borderRadius={6}
+                    />
                   </TableCell>
 
                   <TableCell>
@@ -682,19 +786,16 @@ const Tole = () => {
           {toleInfo && (
             <Box sx={{ mt: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                {toleInfo.Logo && (
-                  <img
-                    src={toleInfo.Logo}
-                    alt="logo"
-                    style={{
-                      width: 80,
-                      height: 80,
-                      borderRadius: 8,
-                      objectFit: "cover",
-                      marginRight: 16,
-                    }}
-                  />
-                )}
+                <ImageWithFallback
+                  src={toleInfo.Logo}
+                  alt="logo"
+                  width={80}
+                  height={80}
+                  borderRadius={8}
+                  fallback={
+                    <Box sx={{ width: 80, height: 80, bgcolor: 'grey.200', borderRadius: 2, mr: 2 }} />
+                  }
+                />
                 <Box>
                   <Typography variant="h6" gutterBottom>
                     {toleInfo.Name}
@@ -807,6 +908,7 @@ const Tole = () => {
         onClose={() => {
           setOpen(false);
           setError("");
+          setLogoFile(null);
         }}
         maxWidth="md"
         fullWidth
@@ -827,7 +929,7 @@ const Tole = () => {
                 fullWidth
                 value={form.ToleId}
                 onChange={(e) => setForm({ ...form, ToleId: e.target.value })}
-                disabled={editData} // Cannot edit ToleId when updating
+                disabled={editData}
                 required
               />
             </Grid>
@@ -1027,22 +1129,24 @@ const Tole = () => {
                 fullWidth
                 inputProps={{
                   accept: "image/*",
-                  onChange: handleLogoUpload,
                 }}
                 onChange={handleLogoUpload}
               />
-              {form.Logo && (
+              {(form.Logo || logoFile) && (
                 <Box mt={1}>
-                  <img
+                  <ImageWithFallback
                     src={form.Logo}
                     alt="preview"
-                    style={{
-                      width: 80,
-                      height: 80,
-                      objectFit: "cover",
-                      borderRadius: 4,
-                    }}
+                    width={80}
+                    height={80}
+                    borderRadius={4}
+                    fallback={
+                      <Box sx={{ width: 80, height: 80, bgcolor: 'grey.200', borderRadius: 1 }} />
+                    }
                   />
+                  <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
+                    {logoFile ? "New logo selected" : "Existing logo"}
+                  </Typography>
                 </Box>
               )}
             </Grid>
@@ -1054,6 +1158,7 @@ const Tole = () => {
             onClick={() => {
               setOpen(false);
               setError("");
+              setLogoFile(null);
             }}
             disabled={loading}
           >

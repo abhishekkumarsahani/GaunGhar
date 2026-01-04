@@ -139,10 +139,10 @@ const loadHelplines = async () => {
         </Button>
       </Box>
 
-      <Paper>
+      <Paper sx={{ overflow: 'hidden' }}>
         <Table>
           <TableHead>
-            <TableRow>
+            <TableRow sx={{ backgroundColor: 'primary.main' }}>
               <TableCell>Help For</TableCell>
               <TableCell>Contact Name</TableCell>
               <TableCell>Contact</TableCell>
