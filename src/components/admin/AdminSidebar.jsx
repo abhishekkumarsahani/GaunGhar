@@ -9,77 +9,115 @@ import {
   Typography,
   Divider,
   useTheme,
-  alpha, // Add this import
+  alpha,
 } from "@mui/material";
+
 import {
-  Dashboard as DashboardIcon,
-  People as PeopleIcon,
-  Settings as SettingsIcon,
-  ShoppingCart,
-  BarChart,
-  Category,
-  LocalShipping,
-  Payment,
+  Dashboard,
+  People,
+  Settings,
+  Event,
+  Payments,
   Store,
+  Call,
+  Badge,
+  ViewCarousel,
+  ReportProblem,
 } from "@mui/icons-material";
+
 import { useNavigate, useLocation } from "react-router-dom";
 
 const drawerWidth = 260;
 
 const menuItems = [
+  // ================= CORE =================
   {
-    text: "Dashboard",
-    icon: <DashboardIcon />,
-    path: "/admin/dashboard",
-    color: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    section: "CORE",
+    items: [
+      {
+        text: "Dashboard",
+        icon: <Dashboard />,
+        path: "/admin/dashboard",
+      },
+      {
+        text: "Users",
+        icon: <People />,
+        path: "/admin/users",
+      },
+    ],
   },
+
+  // ================= TOLE =================
   {
-    text: "Users",
-    icon: <PeopleIcon />,
-    path: "/admin/users",
-    color: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+    section: "TOLE MANAGEMENT",
+    items: [
+      {
+        text: "Tole",
+        icon: <Store />,
+        path: "/admin/tole",
+      },
+      {
+        text: "Helpline",
+        icon: <Call />,
+        path: "/admin/helpline",
+      },
+      {
+        text: "Events",
+        icon: <Event />,
+        path: "/admin/event",
+      },
+      {
+        text: "Slider",
+        icon: <ViewCarousel />,
+        path: "/admin/slider",
+      },
+      {
+        text: "Government Identity",
+        icon: <Badge />,
+        path: "/admin/government-identity",
+      }
+    ],
   },
+
+  // ================= COMPLAIN =================
   {
-    text: "Tole",
-    icon: <Store />,
-    path: "/admin/tole",
-    color: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+    section: "COMPLAINTS",
+    items: [
+      {
+        text: "Complain Topics",
+        icon: <ReportProblem />,
+        path: "/admin/complain",
+      },
+      {
+        text: "Complains",
+        icon: <ReportProblem />,
+        path: "/admin/complaints",
+      },
+    ],
   },
+
+  // ================= FINANCE =================
   {
-    text: "Helpline",
-    icon: <ShoppingCart />,
-    path: "/admin/helpline",
-    color: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+    section: "FINANCE",
+    items: [
+      {
+        text: "Payments",
+        icon: <Payments />,
+        path: "/admin/payments",
+      },
+    ],
   },
+
+  // ================= SYSTEM =================
   {
-    text: "Slider",
-    icon: <Category />,
-    path: "/admin/slider",
-    color: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-  },
-  {
-    text: "Event",
-    icon: <LocalShipping />,
-    path: "/admin/event",
-    color: "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
-  },
-  {
-    text: "Analytics",
-    icon: <BarChart />,
-    path: "/admin/analytics",
-    color: "linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%)",
-  },
-  {
-    text: "Payments",
-    icon: <Payment />,
-    path: "/admin/payments",
-    color: "linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)",
-  },
-  {
-    text: "Settings",
-    icon: <SettingsIcon />,
-    path: "/admin/settings",
-    color: "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)",
+    section: "SYSTEM",
+    items: [
+      {
+        text: "Settings",
+        icon: <Settings />,
+        path: "/admin/settings",
+      },
+    ],
   },
 ];
 
@@ -98,107 +136,100 @@ const AdminSidebar = () => {
           boxSizing: "border-box",
           backgroundColor: theme.palette.background.default,
           borderRight: `1px solid ${theme.palette.divider}`,
-          boxShadow: "4px 0 20px rgba(0, 0, 0, 0.05)",
         },
       }}
     >
       <Toolbar />
+
+      {/* HEADER */}
       <Box sx={{ p: 2, textAlign: "center" }}>
         <Typography
           variant="h6"
           sx={{
             fontWeight: 700,
-            background: "linear-gradient(45deg, #667eea 0%, #764ba2 100%)",
+            background: "linear-gradient(45deg, #667eea, #764ba2)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
-            mb: 1,
           }}
         >
           ADMIN PANEL
         </Typography>
-        <Typography variant="caption" color="textSecondary">
-          Complete Management System
+        <Typography variant="caption" color="text.secondary">
+          Tole Management System
         </Typography>
       </Box>
+
       <Divider />
-      <List sx={{ px: 2, py: 1 }}>
-        {menuItems.map((item) => {
-          const isSelected = location.pathname === item.path;
-          return (
-            <ListItemButton
-              key={item.text}
-              selected={isSelected}
-              onClick={() => navigate(item.path)}
+
+      {/* MENU */}
+      <List sx={{ px: 2 }}>
+        {menuItems.map((group) => (
+          <Box key={group.section} sx={{ mb: 2 }}>
+            <Typography
+              variant="caption"
               sx={{
-                borderRadius: 2,
-                mb: 1,
-                py: 1.5,
-                position: "relative",
-                overflow: "hidden",
-                transition: "all 0.3s ease",
-                "&:hover": {
-                  transform: "translateX(5px)",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                },
-                "&::before": isSelected
-                  ? {
-                      content: '""',
-                      position: "absolute",
-                      left: 0,
-                      top: 0,
-                      height: "100%",
-                      width: 4,
-                      background: item.color,
-                      borderRadius: "0 4px 4px 0",
-                    }
-                  : {},
-                "&.Mui-selected": {
-                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                  borderLeft: `4px solid ${theme.palette.primary.main}`,
-                  "& .MuiListItemIcon-root": {
-                    color: theme.palette.primary.main,
-                  },
-                  "& .MuiListItemText-primary": {
-                    color: theme.palette.primary.main,
-                    fontWeight: 600,
-                  },
-                },
+                px: 1,
+                color: "text.secondary",
+                fontWeight: 600,
               }}
             >
-              <ListItemIcon
-                sx={{
-                  minWidth: 40,
-                  color: isSelected ? "primary.main" : "text.secondary",
-                  transition: "all 0.3s ease",
-                }}
-              >
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText
-                primary={item.text}
-                primaryTypographyProps={{
-                  fontWeight: isSelected ? 600 : 500,
-                  fontSize: "0.9rem",
-                }}
-              />
-            </ListItemButton>
-          );
-        })}
+              {group.section}
+            </Typography>
+
+            {group.items.map((item) => {
+              const isSelected = location.pathname === item.path;
+
+              return (
+                <ListItemButton
+                  key={item.text}
+                  selected={isSelected}
+                  onClick={() => navigate(item.path)}
+                  sx={{
+                    borderRadius: 2,
+                    mt: 0.5,
+                    "&.Mui-selected": {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.12),
+                    },
+                  }}
+                >
+                  <ListItemIcon
+                    sx={{
+                      minWidth: 36,
+                      color: isSelected
+                        ? theme.palette.primary.main
+                        : "text.secondary",
+                    }}
+                  >
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.text}
+                    primaryTypographyProps={{
+                      fontWeight: isSelected ? 600 : 500,
+                      fontSize: "0.9rem",
+                    }}
+                  />
+                </ListItemButton>
+              );
+            })}
+          </Box>
+        ))}
       </List>
-      <Box sx={{ p: 3, mt: "auto" }}>
+
+      {/* FOOTER */}
+      <Box sx={{ p: 2, mt: "auto" }}>
         <Box
           sx={{
             p: 2,
             borderRadius: 2,
-            background: "linear-gradient(135deg, #667eea15 0%, #764ba215 100%)",
-            border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+            background: alpha(theme.palette.primary.main, 0.08),
           }}
         >
-          <Typography variant="body2" fontWeight={600} gutterBottom>
+          <Typography variant="body2" fontWeight={600}>
             Need Help?
           </Typography>
-          <Typography variant="caption" color="textSecondary">
-            Contact support@gaunghar.com
+          <Typography variant="caption" color="text.secondary">
+            support@gaunghar.com
           </Typography>
         </Box>
       </Box>

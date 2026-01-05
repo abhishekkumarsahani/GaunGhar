@@ -7,8 +7,11 @@ import ToleManagement from "./pages/admin/Tole";
 import HelpLine from "./pages/admin/Helpline";
 import Slider from "./pages/admin/Slider";
 import Event from "./pages/admin/Event";
+import Complain from "./pages/admin/ComplainTopic";
 import MyProfile from "./pages/admin/MyProfile";
 import ProtectedRoute from "./components/admin/ProtectedRoute";
+import Complaints from "./pages/admin/Complaints";
+import GovernmentIdentity from "./pages/admin/GovernmentIdentity";
 
 function App() {
   return (
@@ -23,6 +26,9 @@ function App() {
         <Route path="/admin/profile" element={<ProtectedRoute><MyProfile /></ProtectedRoute>} />
         <Route path="/admin/slider" element={<ProtectedRoute><Slider /></ProtectedRoute>} />
         <Route path="/admin/event" element={<ProtectedRoute><Event /></ProtectedRoute>} />
+        <Route path="/admin/complain" element={<ProtectedRoute><Complain /></ProtectedRoute>} />
+        <Route path="/admin/complaints" element={<ProtectedRoute><Complaints /></ProtectedRoute>} />
+        <Route path="/admin/government-identity" element={<ProtectedRoute><GovernmentIdentity /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );
