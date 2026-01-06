@@ -21,6 +21,7 @@ import {
   Store,
   Call,
   Badge,
+  AccountBalance,
   ViewCarousel,
   ReportProblem,
 } from "@mui/icons-material";
@@ -105,6 +106,17 @@ const menuItems = [
         icon: <Payments />,
         path: "/admin/payments",
       },
+      {
+        text: "Account Ledger",
+        icon: <AccountBalance />,
+        path: "/admin/ledger",
+      },
+      {
+        text: "Simple Account",
+        icon: <AccountBalance />,
+        path: "/admin/simple-account",
+      }
+
     ],
   },
 

@@ -12,6 +12,8 @@ import MyProfile from "./pages/admin/MyProfile";
 import ProtectedRoute from "./components/admin/ProtectedRoute";
 import Complaints from "./pages/admin/Complaints";
 import GovernmentIdentity from "./pages/admin/GovernmentIdentity";
+import Ledger from "./pages/admin/Ledger";
+import Account from "./pages/admin/SimpleAccount";
 
 function App() {
   return (
@@ -29,6 +31,8 @@ function App() {
         <Route path="/admin/complain" element={<ProtectedRoute><Complain /></ProtectedRoute>} />
         <Route path="/admin/complaints" element={<ProtectedRoute><Complaints /></ProtectedRoute>} />
         <Route path="/admin/government-identity" element={<ProtectedRoute><GovernmentIdentity /></ProtectedRoute>} />
+        <Route path="/admin/ledger" element={<ProtectedRoute><Ledger /></ProtectedRoute>} />
+        <Route path="/admin/simple-account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );
