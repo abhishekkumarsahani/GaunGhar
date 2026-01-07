@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Box,
   Button,
@@ -24,8 +24,12 @@ import AdminLayout from "../../components/admin/AdminLayout";
 import { eventApi } from "../../api/eventApi";
 
 const Event = () => {
-  const user = JSON.parse(localStorage.getItem("adminUser"))?.loginLst?.[0];
+  // ================= STABLE USER =================
+  const user = useMemo(() => {
+    return JSON.parse(localStorage.getItem("adminUser"))?.loginLst?.[0];
+  }, []);
 
+  // ================= STATE =================
   const [rows, setRows] = useState([]);
   const [open, setOpen] = useState(false);
   const [editData, setEditData] = useState(null);
@@ -39,8 +43,8 @@ const Event = () => {
     Description: "",
     DateFrom: "",
     DateTo: "",
-    FromTime: "",  // API expects FromTime (not TimeFrom)
-    ToTime: "",    // API expects ToTime (not TimeTo)
+    FromTime: "",
+    ToTime: "",
     Venue: "",
     OrganisedBy: "",
     Contact: "",
@@ -84,13 +88,11 @@ const Event = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
+    if (!file.type.startsWith("image/")) {
       setError("Please select an image file");
       return;
     }
 
-    // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       setError("Image size should be less than 2MB");
       return;
@@ -101,17 +103,9 @@ const Event = () => {
       const base64 = reader.result.includes(",")
         ? reader.result.split(",")[1]
         : reader.result;
-
-      setForm({
-        ...form,
-        Banner: base64,
-      });
+      setForm({ ...form, Banner: base64 });
     };
-
-    reader.onerror = () => {
-      setError("Failed to read image file");
-    };
-
+    reader.onerror = () => setError("Failed to read image file");
     reader.readAsDataURL(file);
   };
 
@@ -133,39 +127,30 @@ const Event = () => {
       setError("Venue is required");
       return false;
     }
+    if (!form.Description.trim()) {
+      setError("Description is required");
+      return false;
+    }
     return true;
   };
 
   // ================= SAVE =================
   const handleSave = async () => {
+    setError("");
+    if (!validateForm()) return;
+    if (!user?.ToleID || !user?.UserID) {
+      setError("User information not found");
+      return;
+    }
+
     try {
-      // Clear previous errors
-      setError("");
-
-      // Validate form
-      if (!validateForm()) {
-        return;
-      }
-
-      if (!user?.ToleID || !user?.UserID) {
-        setError("User information not found");
-        return;
-      }
-
-      // Prepare payload according to API format
       const payload = {
         ToleID: user.ToleID,
         UserID: user.UserID,
         Flag: editData ? "u" : "i",
         ...form,
       };
-
-      // If updating, include EventID
-      if (editData) {
-        payload.EventID = editData.EventID;
-      }
-
-      console.log("Sending payload:", payload);
+      if (editData) payload.EventID = editData.EventID;
 
       const res = await eventApi(payload);
 
@@ -178,8 +163,6 @@ const Event = () => {
       setEditData(null);
       setForm(emptyForm);
       loadEvents();
-      
-      // Show success message
       alert(editData ? "Event updated successfully!" : "Event created successfully!");
     } catch (error) {
       console.error("Error saving event:", error);
@@ -191,7 +174,7 @@ const Event = () => {
   const toggleActive = async (row) => {
     try {
       const newStatus = row.IsActive === "A" ? "I" : "A";
-      
+
       await eventApi({
         ToleID: user?.ToleID,
         UserID: user?.UserID,
@@ -199,16 +182,13 @@ const Event = () => {
         EventID: row.EventID,
         IsActive: newStatus,
       });
-      
-      // Update local state immediately for better UX
-      setRows(prevRows => 
-        prevRows.map(item => 
-          item.EventID === row.EventID 
-            ? { ...item, IsActive: newStatus }
-            : item
+
+      setRows((prevRows) =>
+        prevRows.map((item) =>
+          item.EventID === row.EventID ? { ...item, IsActive: newStatus } : item
         )
       );
-      
+
       alert(`Event ${newStatus === "A" ? "activated" : "deactivated"} successfully!`);
     } catch (error) {
       console.error("Error toggling active status:", error);
@@ -227,7 +207,6 @@ const Event = () => {
         Flag: "R",
         EventID: id,
       });
-      
       loadEvents();
       alert("Event deleted successfully!");
     } catch (error) {
@@ -247,8 +226,8 @@ const Event = () => {
       Description: row.Description || "",
       DateFrom: row.DateFrom || "",
       DateTo: row.DateTo || "",
-      FromTime: row.FromTime || row.TimeFrom || "", // Handle both field names
-      ToTime: row.ToTime || row.TimeTo || "",       // Handle both field names
+      FromTime: row.FromTime || row.TimeFrom || "",
+      ToTime: row.ToTime || row.TimeTo || "",
       Venue: row.Venue || "",
       OrganisedBy: row.OrganisedBy || "",
       Contact: row.Contact || "",
@@ -262,24 +241,18 @@ const Event = () => {
     setError("");
   };
 
-  // ================= FORMAT TIME DISPLAY =================
+  // ================= FORMAT TIME =================
   const formatTimeDisplay = (time) => {
     if (!time) return "";
-    
-    // If time is already in AM/PM format, return as is
-    if (time.includes("AM") || time.includes("PM")) {
-      return time;
-    }
-    
-    // If time is in 24-hour format, convert to 12-hour format
+    if (time.includes("AM") || time.includes("PM")) return time;
     const [hours, minutes] = time.split(":");
     const hour = parseInt(hours);
     const ampm = hour >= 12 ? "PM" : "AM";
     const hour12 = hour % 12 || 12;
-    
-    return `${hour12.toString().padStart(2, '0')}:${minutes} ${ampm}`;
+    return `${hour12.toString().padStart(2, "0")}:${minutes} ${ampm}`;
   };
 
+  // ================= RENDER =================
   return (
     <AdminLayout>
       <Box display="flex" justifyContent="space-between" mb={3}>
@@ -298,19 +271,15 @@ const Event = () => {
         </Button>
       </Box>
 
-      <Paper sx={{ overflow: 'hidden' }}>
+      <Paper sx={{ overflow: "hidden" }}>
         <Table>
           <TableHead>
-            <TableRow sx={{ backgroundColor: 'primary.main' }}>
-              <TableCell><strong>ID</strong></TableCell>
-              <TableCell><strong>Title</strong></TableCell>
-              <TableCell><strong>Type</strong></TableCell>
-              <TableCell><strong>Date</strong></TableCell>
-              <TableCell><strong>Time</strong></TableCell>
-              <TableCell><strong>Venue</strong></TableCell>
-              <TableCell><strong>Views</strong></TableCell>
-              <TableCell><strong>Status</strong></TableCell>
-              <TableCell align="right"><strong>Actions</strong></TableCell>
+            <TableRow sx={{ backgroundColor: "primary.main" }}>
+              {["ID", "Title", "Type", "Date", "Time", "Venue", "Views", "Status", "Actions"].map((header) => (
+                <TableCell key={header} sx={{ color: "#fff", fontWeight: 600 }}>
+                  {header}
+                </TableCell>
+              ))}
             </TableRow>
           </TableHead>
 
@@ -325,45 +294,35 @@ const Event = () => {
               </TableRow>
             ) : (
               rows.map((row) => (
-                <TableRow 
+                <TableRow
                   key={row.EventID}
                   hover
-                  sx={{ 
-                    '&:hover': { backgroundColor: 'action.hover' },
-                    opacity: row.IsActive === "I" ? 0.6 : 1
-                  }}
+                  sx={{ "&:hover": { backgroundColor: "action.hover" }, opacity: row.IsActive === "I" ? 0.6 : 1 }}
                 >
                   <TableCell>{row.EventID}</TableCell>
-
                   <TableCell>
                     <Typography fontWeight={600}>{row.Title}</Typography>
                     <Typography variant="caption" color="text.secondary">
                       {row.Slug}
                     </Typography>
                   </TableCell>
-
                   <TableCell>{row.EventType}</TableCell>
-
                   <TableCell>
                     <Typography variant="body2">
                       {row.DateFrom} {row.DateFrom !== row.DateTo && `→ ${row.DateTo}`}
                     </Typography>
                   </TableCell>
-
                   <TableCell>
                     <Typography variant="body2">
                       {formatTimeDisplay(row.FromTime || row.TimeFrom)} → {formatTimeDisplay(row.ToTime || row.TimeTo)}
                     </Typography>
                   </TableCell>
-
                   <TableCell>
                     <Typography variant="body2" noWrap>
                       {row.Venue}
                     </Typography>
                   </TableCell>
-
                   <TableCell>{row.NoOfView || 0}</TableCell>
-
                   <TableCell>
                     <Box display="flex" alignItems="center">
                       <Switch
@@ -376,21 +335,11 @@ const Event = () => {
                       </Typography>
                     </Box>
                   </TableCell>
-
                   <TableCell align="right">
-                    <IconButton 
-                      onClick={() => handleEdit(row)}
-                      color="primary"
-                      size="small"
-                    >
+                    <IconButton onClick={() => handleEdit(row)} color="primary" size="small">
                       <Edit />
                     </IconButton>
-
-                    <IconButton
-                      color="error"
-                      size="small"
-                      onClick={() => handleDelete(row.EventID)}
-                    >
+                    <IconButton color="error" size="small" onClick={() => handleDelete(row.EventID)}>
                       <Delete />
                     </IconButton>
                   </TableCell>
@@ -402,16 +351,8 @@ const Event = () => {
       </Paper>
 
       {/* ================= MODAL ================= */}
-      <Dialog
-        open={open}
-        onClose={() => {
-          setOpen(false);
-          setError("");
-        }}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle sx={{ borderBottom: 1, borderColor: 'divider', pb: 2 }}>
+      <Dialog open={open} onClose={() => { setOpen(false); setError(""); }} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ borderBottom: 1, borderColor: "divider", pb: 2 }}>
           {editData ? "Update Event" : "Create New Event"}
         </DialogTitle>
 
@@ -456,9 +397,7 @@ const Event = () => {
                 fullWidth
                 value={form.EventType}
                 onChange={(e) => setForm({ ...form, EventType: e.target.value })}
-                SelectProps={{
-                  native: true,
-                }}
+                SelectProps={{ native: true }}
               >
                 <option value="M">M</option>
                 <option value="E">E</option>
@@ -565,36 +504,25 @@ const Event = () => {
                 rows={4}
                 fullWidth
                 value={form.Description}
-                onChange={(e) =>
-                  setForm({ ...form, Description: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, Description: e.target.value })}
                 required
               />
             </Grid>
 
             <Grid item xs={12}>
-              <Box sx={{ border: '1px dashed', borderColor: 'primary.main', p: 2, borderRadius: 1 }}>
+              <Box sx={{ border: "1px dashed", borderColor: "primary.main", p: 2, borderRadius: 1 }}>
                 <Typography variant="subtitle2" gutterBottom>
                   Banner Image
                 </Typography>
-                <Button
-                  variant="outlined"
-                  component="label"
-                  startIcon={<Add />}
-                >
+                <Button variant="outlined" component="label" startIcon={<Add />}>
                   Upload Image
-                  <input
-                    type="file"
-                    hidden
-                    accept="image/*"
-                    onChange={handleBanner}
-                  />
+                  <input type="file" hidden accept="image/*" onChange={handleBanner} />
                 </Button>
-                <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mt: 1 }}>
+                <Typography variant="caption" color="textSecondary" sx={{ display: "block", mt: 1 }}>
                   Maximum file size: 2MB. Supported formats: JPG, PNG, GIF
                 </Typography>
                 {form.Banner && (
-                  <Typography variant="caption" color="success.main" sx={{ display: 'block', mt: 1 }}>
+                  <Typography variant="caption" color="success.main" sx={{ display: "block", mt: 1 }}>
                     ✓ Image uploaded successfully
                   </Typography>
                 )}
@@ -625,18 +553,12 @@ const Event = () => {
           </Grid>
         </DialogContent>
 
-        <DialogActions sx={{ borderTop: 1, borderColor: 'divider', p: 2 }}>
-          <Button 
-            onClick={() => {
-              setOpen(false);
-              setError("");
-            }}
-            color="inherit"
-          >
+        <DialogActions sx={{ borderTop: 1, borderColor: "divider", p: 2 }}>
+          <Button onClick={() => { setOpen(false); setError(""); }} color="inherit">
             Cancel
           </Button>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             onClick={handleSave}
             disabled={!form.Title || !form.DateFrom || !form.DateTo || !form.Venue || !form.Description}
           >

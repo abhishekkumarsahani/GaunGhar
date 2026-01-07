@@ -22,6 +22,7 @@ import {
   Call,
   Badge,
   AccountBalance,
+  CalendarMonth,
   ViewCarousel,
   ReportProblem,
 } from "@mui/icons-material";
@@ -35,16 +36,8 @@ const menuItems = [
   {
     section: "CORE",
     items: [
-      {
-        text: "Dashboard",
-        icon: <Dashboard />,
-        path: "/admin/dashboard",
-      },
-      {
-        text: "Users",
-        icon: <People />,
-        path: "/admin/users",
-      },
+      { text: "Dashboard", icon: <Dashboard />, path: "/admin/dashboard" },
+      { text: "Users", icon: <People />, path: "/admin/users" },
     ],
   },
 
@@ -52,31 +45,11 @@ const menuItems = [
   {
     section: "TOLE MANAGEMENT",
     items: [
-      {
-        text: "Tole",
-        icon: <Store />,
-        path: "/admin/tole",
-      },
-      {
-        text: "Helpline",
-        icon: <Call />,
-        path: "/admin/helpline",
-      },
-      {
-        text: "Events",
-        icon: <Event />,
-        path: "/admin/event",
-      },
-      {
-        text: "Slider",
-        icon: <ViewCarousel />,
-        path: "/admin/slider",
-      },
-      {
-        text: "Government Identity",
-        icon: <Badge />,
-        path: "/admin/government-identity",
-      }
+      { text: "Tole", icon: <Store />, path: "/admin/tole" },
+      { text: "Helpline", icon: <Call />, path: "/admin/helpline" },
+      { text: "Events", icon: <Event />, path: "/admin/event" },
+      { text: "Slider", icon: <ViewCarousel />, path: "/admin/slider" },
+      { text: "Government Identity", icon: <Badge />, path: "/admin/government-identity" },
     ],
   },
 
@@ -84,16 +57,8 @@ const menuItems = [
   {
     section: "COMPLAINTS",
     items: [
-      {
-        text: "Complain Topics",
-        icon: <ReportProblem />,
-        path: "/admin/complain",
-      },
-      {
-        text: "Complains",
-        icon: <ReportProblem />,
-        path: "/admin/complaints",
-      },
+      { text: "Complain Topics", icon: <ReportProblem />, path: "/admin/complain" },
+      { text: "Complains", icon: <ReportProblem />, path: "/admin/complaints" },
     ],
   },
 
@@ -101,22 +66,12 @@ const menuItems = [
   {
     section: "FINANCE",
     items: [
-      {
-        text: "Payments",
-        icon: <Payments />,
-        path: "/admin/payments",
-      },
-      {
-        text: "Account Ledger",
-        icon: <AccountBalance />,
-        path: "/admin/ledger",
-      },
-      {
-        text: "Simple Account",
-        icon: <AccountBalance />,
-        path: "/admin/simple-account",
-      }
-
+      { text: "Payments", icon: <Payments />, path: "/admin/payments" },
+      { text: "Account Ledger", icon: <AccountBalance />, path: "/admin/ledger" },
+      { text: "Simple Account", icon: <AccountBalance />, path: "/admin/simple-account" },
+      { text: "Income Expense", icon: <AccountBalance />, path: "/admin/income-expense" },
+      { text: "Management Year", icon: <CalendarMonth />, path: "/admin/management-year" },
+      { text: "Management", icon: <CalendarMonth />, path: "/admin/management" },
     ],
   },
 
@@ -124,11 +79,7 @@ const menuItems = [
   {
     section: "SYSTEM",
     items: [
-      {
-        text: "Settings",
-        icon: <Settings />,
-        path: "/admin/settings",
-      },
+      { text: "Settings", icon: <Settings />, path: "/admin/settings" },
     ],
   },
 ];
@@ -179,11 +130,7 @@ const AdminSidebar = () => {
           <Box key={group.section} sx={{ mb: 2 }}>
             <Typography
               variant="caption"
-              sx={{
-                px: 1,
-                color: "text.secondary",
-                fontWeight: 600,
-              }}
+              sx={{ px: 1, color: "text.secondary", fontWeight: 600 }}
             >
               {group.section}
             </Typography>

@@ -339,12 +339,12 @@ const Slider = () => {
         <Table>
           <TableHead>
             <TableRow sx={{ backgroundColor: 'primary.main' }}>
-              <TableCell width="60">Preview</TableCell>
-              <TableCell>Title</TableCell>
-              <TableCell>Order</TableCell>
-              <TableCell>Redirect URL</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell align="right">Actions</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }} width="60">Preview</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }}>Title</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }}>Order</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }}>Redirect URL</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }}>Status</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }} align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
 

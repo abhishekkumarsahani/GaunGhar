@@ -654,13 +654,13 @@ const Users = () => {
         <Table>
           <TableHead>
             <TableRow sx={{ backgroundColor: 'primary.main' }}>
-              <TableCell>ID</TableCell>
-              <TableCell>User</TableCell>
-              <TableCell>Username</TableCell>
-              <TableCell>Contact</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Allow App</TableCell>
-              <TableCell align="right">Actions</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }}>ID</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }}>User</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }}>Username</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }}>Contact</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }}>Email</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }}>Allow App</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }} align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
 

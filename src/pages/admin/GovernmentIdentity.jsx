@@ -270,19 +270,19 @@ const GovernmentIdentity = () => {
 
       {error && <Alert severity="error" onClose={() => setError("")} sx={{ mb: 2 }}>{error}</Alert>}
 
-      <Paper>
+      <Paper sx={{ overflow: "hidden" }}>
         <Table>
           <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Member ID</TableCell>
-              <TableCell>Type</TableCell>
-              <TableCell>Number</TableCell>
-              <TableCell>Date</TableCell>
-              <TableCell>Issued By</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Created Date</TableCell>
-              <TableCell align="right">Actions</TableCell>
+            <TableRow sx={{ backgroundColor: "primary.main" }}>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }}>ID</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }}>Member ID</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }}>Type</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }}>Number</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }}>Date</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }}>Issued By</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }}>Status</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }}>Created Date</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }} align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Box,
   Paper,
@@ -27,13 +27,7 @@ import {
   FormControl,
   InputLabel,
 } from "@mui/material";
-import {
-  Add,
-  Edit,
-  Delete,
-  Visibility,
-  AccountBalance,
-} from "@mui/icons-material";
+import { Add, Edit } from "@mui/icons-material";
 import AdminLayout from "../../components/admin/AdminLayout";
 import { ledgerApi } from "../../api/ledgerApi";
 
@@ -45,6 +39,8 @@ const Ledger = () => {
   const [editData, setEditData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const hasFetched = useRef(false);
 
   const [form, setForm] = useState({
     AccNo: "",
@@ -80,8 +76,12 @@ const Ledger = () => {
   };
 
   useEffect(() => {
+    if (!user?.ToleID) return;
+    if (hasFetched.current) return;
+
+    hasFetched.current = true;
     fetchLedger();
-  }, []);
+  }, [user]);
 
   /* ================= FORM ================= */
   const handleChange = (e) => {
@@ -110,12 +110,15 @@ const Ledger = () => {
     setOpen(true);
   };
 
-  const handleClose = () => setOpen(false);
+  const handleClose = () => {
+    setOpen(false);
+    setError("");
+  };
 
   /* ================= SAVE ================= */
   const handleSave = async () => {
     if (!form.AccNo || !form.AccName) {
-      setError("Account No and Name are required");
+      setError("Account No and Account Name are required");
       return;
     }
 
@@ -160,19 +163,15 @@ const Ledger = () => {
 
   return (
     <AdminLayout>
-
-         {/* ===== HEADER ===== */}
-       <Box display="flex" justifyContent="space-between" mb={3}>
+      {/* ===== HEADER ===== */}
+      <Box display="flex" justifyContent="space-between" mb={3}>
         <Typography variant="h5">Ledger Management</Typography>
-        <Button variant="contained" startIcon={<Add />} onClick={handleOpen}>
+        <Button variant="contained" startIcon={<Add />} onClick={() => handleOpen()}>
           Add Ledger
         </Button>
       </Box>
 
-      <Paper sx={{ overflow: 'hidden' }}>
-       
-
-        {/* ===== TABLE ===== */}
+      <Paper sx={{ overflow: "hidden" }}>
         {loading ? (
           <Box py={6} textAlign="center">
             <CircularProgress />
@@ -181,7 +180,7 @@ const Ledger = () => {
           <TableContainer>
             <Table>
               <TableHead>
-                <TableRow sx={{ backgroundColor: 'primary.main' }}>
+                <TableRow sx={{ backgroundColor: "primary.main" }}>
                   {[
                     "Account No",
                     "Account Name",
@@ -192,7 +191,7 @@ const Ledger = () => {
                   ].map((h) => (
                     <TableCell
                       key={h}
-                      
+                      sx={{ color: "#fff", fontWeight: 600 }}
                       align={h === "Actions" ? "right" : "left"}
                     >
                       {h}
@@ -212,9 +211,7 @@ const Ledger = () => {
                   rows.map((row) => (
                     <TableRow
                       key={row.AccID}
-                      sx={{
-                        "&:hover": { bgcolor: "#f5f7ff" },
-                      }}
+                      sx={{ "&:hover": { bgcolor: "#f5f7ff" } }}
                     >
                       <TableCell>{row.AccNo}</TableCell>
                       <TableCell>{row.AccName}</TableCell>
@@ -241,23 +238,14 @@ const Ledger = () => {
 
                       {/* ACTIONS */}
                       <TableCell align="right">
-                        <Stack
-                          direction="row"
-                          spacing={1}
-                          justifyContent="flex-end"
-                        >
-
-
-                          <Tooltip title="Edit">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleOpen(row)}
-                            >
-                              <Edit fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-
-                        </Stack>
+                        <Tooltip title="Edit">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleOpen(row)}
+                          >
+                            <Edit fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
                       </TableCell>
                     </TableRow>
                   ))
@@ -285,6 +273,7 @@ const Ledger = () => {
               onChange={handleChange}
               fullWidth
             />
+
             <TextField
               label="Account Name"
               name="AccName"

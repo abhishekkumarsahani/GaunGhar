@@ -14,6 +14,9 @@ import Complaints from "./pages/admin/Complaints";
 import GovernmentIdentity from "./pages/admin/GovernmentIdentity";
 import Ledger from "./pages/admin/Ledger";
 import Account from "./pages/admin/SimpleAccount";
+import ManagementYear from "./pages/admin/ManagementYear";
+import Management from "./pages/admin/Management";
+import Income from "./pages/admin/IncomeExpense";
 
 function App() {
   return (
@@ -33,6 +36,9 @@ function App() {
         <Route path="/admin/government-identity" element={<ProtectedRoute><GovernmentIdentity /></ProtectedRoute>} />
         <Route path="/admin/ledger" element={<ProtectedRoute><Ledger /></ProtectedRoute>} />
         <Route path="/admin/simple-account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
+        <Route path="/admin/management-year" element={<ProtectedRoute><ManagementYear /></ProtectedRoute>} />
+        <Route path="/admin/management" element={<ProtectedRoute><Management /></ProtectedRoute>} />
+        <Route path="/admin/income-expense" element={<ProtectedRoute><Income /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );

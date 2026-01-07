@@ -17,6 +17,7 @@ import {
   IconButton,
   Switch,
   Alert,
+  Stack
 } from "@mui/material";
 import { Add, Edit, Delete } from "@mui/icons-material";
 import AdminLayout from "../../components/admin/AdminLayout";
@@ -41,7 +42,6 @@ const ComplainTopic = () => {
       });
 
       if (res.StatusCode === 200) {
-        // The API returns ComplainTopicLst, not TopicLst
         setRows(res.ComplainTopicLst || []);
       } else {
         setError(res.Message || "Failed to load topics");
@@ -64,7 +64,6 @@ const ComplainTopic = () => {
     }
 
     try {
-      // Prepare payload based on whether we're editing or creating
       let payload = {
         ToleID: user.ToleID,
         UserID: user.UserID,
@@ -72,19 +71,9 @@ const ComplainTopic = () => {
       };
 
       if (editData) {
-        // Update existing topic
-        payload = {
-          ...payload,
-          Flag: "U",
-          TopicID: editData.TopicID || editData.topicid,
-        };
+        payload = { ...payload, Flag: "U", TopicID: editData.TopicID || editData.topicid };
       } else {
-        // Create new topic
-        payload = {
-          ...payload,
-          Flag: "i",
-          IsActive: "A"
-        };
+        payload = { ...payload, Flag: "i", IsActive: "A" };
       }
 
       const res = await complainTopicApi(payload);
@@ -94,7 +83,7 @@ const ComplainTopic = () => {
         return;
       }
 
-      // Success - reset and refresh
+      // Success
       setOpen(false);
       setEditData(null);
       setTopic("");
@@ -148,7 +137,7 @@ const ComplainTopic = () => {
     }
   };
 
-  // Open modal for create/edit
+  // ================= MODAL HANDLERS =================
   const handleOpenModal = (row = null) => {
     setEditData(row);
     setTopic(row ? (row.Topic || row.topic) : "");
@@ -156,7 +145,6 @@ const ComplainTopic = () => {
     setOpen(true);
   };
 
-  // Close modal
   const handleCloseModal = () => {
     setOpen(false);
     setEditData(null);
@@ -166,13 +154,10 @@ const ComplainTopic = () => {
 
   return (
     <AdminLayout>
+      {/* ===== HEADER ===== */}
       <Box display="flex" justifyContent="space-between" mb={3}>
         <Typography variant="h5">Complain Topic Management</Typography>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => handleOpenModal()}
-        >
+        <Button variant="contained" startIcon={<Add />} onClick={() => handleOpenModal()}>
           Add Topic
         </Button>
       </Box>
@@ -183,71 +168,67 @@ const ComplainTopic = () => {
         </Alert>
       )}
 
-      <Paper sx={{ overflow: 'hidden' }}>
+      {/* ===== TABLE ===== */}
+      <Paper sx={{ overflow: "hidden" }}>
         <Table>
           <TableHead>
-            <TableRow sx={{ backgroundColor: 'primary.main' }}>
-              <TableCell>ID</TableCell>
-              <TableCell>Topic</TableCell>
-              <TableCell>No. of Complaints</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell align="right">Actions</TableCell>
+            <TableRow sx={{ backgroundColor: "primary.main" }}>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }}>ID</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }}>Topic</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }}>No. of Complaints</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }}>Status</TableCell>
+              <TableCell sx={{ color: "#fff", fontWeight: 600 }} align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
 
           <TableBody>
+            {rows.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} align="center">No Topics Found</TableCell>
+              </TableRow>
+            )}
+
             {rows.map((row) => (
-              <TableRow key={row.TopicID || row.topicid}>
+              <TableRow key={row.TopicID || row.topicid} sx={{ "&:hover": { bgcolor: "#f5f7ff" } }}>
                 <TableCell>{row.TopicID || row.topicid}</TableCell>
                 <TableCell>{row.Topic || row.topic}</TableCell>
                 <TableCell>{row.NoOfComplain || 0}</TableCell>
                 <TableCell>
-                  <Switch
-                    checked={(row.IsActive || row.isactive) === "A"}
-                    onChange={() => toggleActive(row)}
-                  />
-                  <span style={{ marginLeft: 8 }}>
-                    {(row.IsActive || row.isactive) === "A" ? "Active" : "Inactive"}
-                  </span>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Switch
+                      checked={(row.IsActive || row.isactive) === "A"}
+                      onChange={() => toggleActive(row)}
+                    />
+                    <Typography variant="body2">
+                      {(row.IsActive || row.isactive) === "A" ? "Active" : "Inactive"}
+                    </Typography>
+                  </Stack>
                 </TableCell>
                 <TableCell align="right">
-                  <IconButton onClick={() => handleOpenModal(row)}>
+                  <IconButton onClick={() => handleOpenModal(row)} title="Edit Topic">
                     <Edit />
                   </IconButton>
                   <IconButton
                     color="error"
                     onClick={() => handleDelete(row.TopicID || row.topicid)}
+                    title="Delete Topic"
                   >
                     <Delete />
                   </IconButton>
                 </TableCell>
               </TableRow>
             ))}
-
-            {rows.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={5} align="center">
-                  No Topics Found
-                </TableCell>
-              </TableRow>
-            )}
           </TableBody>
         </Table>
       </Paper>
 
-      {/* ================= MODAL ================= */}
+      {/* ===== MODAL ===== */}
       <Dialog open={open} onClose={handleCloseModal} fullWidth maxWidth="sm">
-        <DialogTitle>
-          {editData ? "Update Complain Topic" : "Create Complain Topic"}
-        </DialogTitle>
-
+        <DialogTitle>{editData ? "Update Complain Topic" : "Create Complain Topic"}</DialogTitle>
         <DialogContent>
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
+            <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
           )}
-
           <TextField
             label="Topic"
             fullWidth
@@ -258,7 +239,6 @@ const ComplainTopic = () => {
             helperText={error && !topic ? "Topic is required" : ""}
           />
         </DialogContent>
-
         <DialogActions>
           <Button onClick={handleCloseModal}>Cancel</Button>
           <Button variant="contained" onClick={handleSave}>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Box,
   Paper,
@@ -38,6 +38,8 @@ const SimpleAccount = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const hasFetched = useRef(false);
+
   const [form, setForm] = useState({
     LedgerID: "",
     AccNo: "",
@@ -51,10 +53,10 @@ const SimpleAccount = () => {
 
   const accountTypes = [
     { value: "D", label: "Default" },
-    { value: "Loan", label: "Loan" },
-    { value: "Deposit", label: "Deposit" },
-    { value: "Expense", label: "Expense" },
-    { value: "Income", label: "Income" },
+    { value: "L", label: "Loan" },
+    { value: "DP", label: "Deposit" },
+    { value: "E", label: "Expense" },
+    { value: "I", label: "Income" },
   ];
 
   /* ================= FETCH ================= */
@@ -77,8 +79,12 @@ const SimpleAccount = () => {
   };
 
   useEffect(() => {
+    if (!user?.ToleID) return;
+    if (hasFetched.current) return;
+
+    hasFetched.current = true;
     fetchAccounts();
-  }, []);
+  }, [user]);
 
   /* ================= FORM ================= */
   const handleChange = (e) => {
@@ -100,7 +106,10 @@ const SimpleAccount = () => {
     setOpen(true);
   };
 
-  const handleClose = () => setOpen(false);
+  const handleClose = () => {
+    setOpen(false);
+    setError("");
+  };
 
   /* ================= SAVE ================= */
   const handleSave = async () => {
@@ -114,6 +123,7 @@ const SimpleAccount = () => {
         ToleID: user.ToleID,
         UserID: user.UserID,
         Flag: "i",
+        MemID: user.UserID,
         LedgerID: Number(form.LedgerID),
         AccNo: Number(form.AccNo),
         AccType: form.AccType,
@@ -162,7 +172,7 @@ const SimpleAccount = () => {
           <TableContainer>
             <Table>
               <TableHead>
-                <TableRow sx={{ bgcolor: "primary.main" }}>
+                <TableRow sx={{ backgroundColor: "primary.main" }}>
                   {[
                     "Account No",
                     "Member Name",
@@ -175,6 +185,7 @@ const SimpleAccount = () => {
                   ].map((h) => (
                     <TableCell
                       key={h}
+                      sx={{ color: "#fff", fontWeight: 600 }}
                       align={h === "Actions" ? "right" : "left"}
                     >
                       {h}
@@ -196,15 +207,12 @@ const SimpleAccount = () => {
                       key={row.AccID}
                       sx={{ "&:hover": { bgcolor: "#f5f7ff" } }}
                     >
-                      {/* Account No */}
-                      <TableCell>
-                        <Typography fontWeight={600}>{row.AccNo}</Typography>
+                      <TableCell sx={{ fontWeight: 600 }}>
+                        {row.AccNo}
                       </TableCell>
 
-                      {/* Member Name */}
                       <TableCell>{row.FullName}</TableCell>
 
-                      {/* Date */}
                       <TableCell>
                         <Typography variant="body2">{row.EngDate}</Typography>
                         <Typography variant="caption" color="text.secondary">
@@ -212,10 +220,8 @@ const SimpleAccount = () => {
                         </Typography>
                       </TableCell>
 
-                      {/* Particulars */}
                       <TableCell>{row.Particulars}</TableCell>
 
-                      {/* Account Type */}
                       <TableCell>
                         <Chip
                           label={row.AccType}
@@ -225,19 +231,16 @@ const SimpleAccount = () => {
                         />
                       </TableCell>
 
-                      {/* Debit */}
                       <TableCell sx={{ color: "error.main", fontWeight: 600 }}>
-                        ₹{parseFloat(row.Debit).toFixed(2)}
+                        ₹{Number(row.Debit || 0).toFixed(2)}
                       </TableCell>
 
-                      {/* Credit */}
                       <TableCell
                         sx={{ color: "success.main", fontWeight: 600 }}
                       >
-                        ₹{parseFloat(row.Credit).toFixed(2)}
+                        ₹{Number(row.Credit || 0).toFixed(2)}
                       </TableCell>
 
-                      {/* Actions */}
                       <TableCell align="right">
                         <Tooltip title="Delete">
                           <IconButton
@@ -273,6 +276,7 @@ const SimpleAccount = () => {
               onChange={handleChange}
               fullWidth
             />
+
             <TextField
               label="Account No"
               name="AccNo"
@@ -280,6 +284,7 @@ const SimpleAccount = () => {
               onChange={handleChange}
               fullWidth
             />
+
             <FormControl fullWidth>
               <InputLabel>Account Type</InputLabel>
               <Select
@@ -295,6 +300,7 @@ const SimpleAccount = () => {
                 ))}
               </Select>
             </FormControl>
+
             <TextField
               type="date"
               label="English Date"
@@ -303,12 +309,14 @@ const SimpleAccount = () => {
               onChange={handleChange}
               InputLabelProps={{ shrink: true }}
             />
+
             <TextField
               label="Nepali Date"
               name="NepDate"
               value={form.NepDate}
               onChange={handleChange}
             />
+
             <TextField
               label="Particulars"
               name="Particulars"
@@ -317,12 +325,14 @@ const SimpleAccount = () => {
               multiline
               rows={2}
             />
+
             <TextField
               label="Debit"
               name="Debit"
               value={form.Debit}
               onChange={handleChange}
             />
+
             <TextField
               label="Credit"
               name="Credit"
