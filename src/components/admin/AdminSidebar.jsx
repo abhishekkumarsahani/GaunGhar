@@ -10,6 +10,7 @@ import {
   Divider,
   useTheme,
   alpha,
+  Tooltip,
 } from "@mui/material";
 
 import {
@@ -30,9 +31,9 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 
 const drawerWidth = 260;
+const collapsedWidth = 72;
 
 const menuItems = [
-  // ================= CORE =================
   {
     section: "CORE",
     items: [
@@ -40,8 +41,6 @@ const menuItems = [
       { text: "Users", icon: <People />, path: "/admin/users" },
     ],
   },
-
-  // ================= TOLE =================
   {
     section: "TOLE MANAGEMENT",
     items: [
@@ -52,8 +51,6 @@ const menuItems = [
       { text: "Government Identity", icon: <Badge />, path: "/admin/government-identity" },
     ],
   },
-
-  // ================= COMPLAIN =================
   {
     section: "COMPLAINTS",
     items: [
@@ -61,21 +58,15 @@ const menuItems = [
       { text: "Complains", icon: <ReportProblem />, path: "/admin/complaints" },
     ],
   },
-
-  // ================= FINANCE =================
   {
     section: "FINANCE",
     items: [
       { text: "Payments", icon: <Payments />, path: "/admin/payments" },
       { text: "Account Ledger", icon: <AccountBalance />, path: "/admin/ledger" },
-      { text: "Simple Account", icon: <AccountBalance />, path: "/admin/simple-account" },
       { text: "Income Expense", icon: <AccountBalance />, path: "/admin/income-expense" },
       { text: "Management Year", icon: <CalendarMonth />, path: "/admin/management-year" },
-      { text: "Management", icon: <CalendarMonth />, path: "/admin/management" },
     ],
   },
-
-  // ================= SYSTEM =================
   {
     section: "SYSTEM",
     items: [
@@ -84,7 +75,7 @@ const menuItems = [
   },
 ];
 
-const AdminSidebar = () => {
+const AdminSidebar = ({ sidebarOpen }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
@@ -93,11 +84,14 @@ const AdminSidebar = () => {
     <Drawer
       variant="permanent"
       sx={{
-        width: drawerWidth,
+        width: sidebarOpen ? drawerWidth : collapsedWidth,
+        flexShrink: 0,
+        whiteSpace: "nowrap",
+        transition: "width 0.3s",
         [`& .MuiDrawer-paper`]: {
-          width: drawerWidth,
-          boxSizing: "border-box",
-          backgroundColor: theme.palette.background.default,
+          width: sidebarOpen ? drawerWidth : collapsedWidth,
+          overflowX: "hidden",
+          transition: "width 0.3s",
           borderRight: `1px solid ${theme.palette.divider}`,
         },
       }}
@@ -106,92 +100,79 @@ const AdminSidebar = () => {
 
       {/* HEADER */}
       <Box sx={{ p: 2, textAlign: "center" }}>
-        <Typography
-          variant="h6"
-          sx={{
-            fontWeight: 700,
-            background: "linear-gradient(45deg, #667eea, #764ba2)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-          }}
-        >
-          ADMIN PANEL
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          Tole Management System
-        </Typography>
+        {sidebarOpen && (
+          <>
+            <Typography variant="h6" fontWeight={700}>
+              ADMIN PANEL
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Tole Management
+            </Typography>
+          </>
+        )}
       </Box>
 
       <Divider />
 
       {/* MENU */}
-      <List sx={{ px: 2 }}>
+      <List sx={{ px: 1 }}>
         {menuItems.map((group) => (
-          <Box key={group.section} sx={{ mb: 2 }}>
-            <Typography
-              variant="caption"
-              sx={{ px: 1, color: "text.secondary", fontWeight: 600 }}
-            >
-              {group.section}
-            </Typography>
+          <Box key={group.section} sx={{ mb: 1 }}>
+            {sidebarOpen && (
+              <Typography
+                variant="caption"
+                sx={{ px: 2, color: "text.secondary", fontWeight: 600 }}
+              >
+                {group.section}
+              </Typography>
+            )}
 
             {group.items.map((item) => {
               const isSelected = location.pathname === item.path;
 
               return (
-                <ListItemButton
+                <Tooltip
+                  title={!sidebarOpen ? item.text : ""}
+                  placement="right"
                   key={item.text}
-                  selected={isSelected}
-                  onClick={() => navigate(item.path)}
-                  sx={{
-                    borderRadius: 2,
-                    mt: 0.5,
-                    "&.Mui-selected": {
-                      backgroundColor: alpha(theme.palette.primary.main, 0.12),
-                    },
-                  }}
                 >
-                  <ListItemIcon
+                  <ListItemButton
+                    selected={isSelected}
+                    onClick={() => navigate(item.path)}
                     sx={{
-                      minWidth: 36,
-                      color: isSelected
-                        ? theme.palette.primary.main
-                        : "text.secondary",
+                      my: 0.5,
+                      mx: 0.5,
+                      borderRadius: 2,
+                      justifyContent: sidebarOpen ? "initial" : "center",
+                      "&.Mui-selected": {
+                        bgcolor: alpha(theme.palette.primary.main, 0.15),
+                      },
                     }}
                   >
-                    {item.icon}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={item.text}
-                    primaryTypographyProps={{
-                      fontWeight: isSelected ? 600 : 500,
-                      fontSize: "0.9rem",
-                    }}
-                  />
-                </ListItemButton>
+                    <ListItemIcon
+                      sx={{
+                        minWidth: 36,
+                        color: isSelected
+                          ? theme.palette.primary.main
+                          : "text.secondary",
+                      }}
+                    >
+                      {item.icon}
+                    </ListItemIcon>
+
+                    {sidebarOpen && (
+                      <ListItemText
+                        primary={item.text}
+                        primaryTypographyProps={{ fontSize: "0.9rem" }}
+                      />
+                    )}
+                  </ListItemButton>
+                </Tooltip>
               );
             })}
           </Box>
         ))}
       </List>
-
-      {/* FOOTER */}
-      <Box sx={{ p: 2, mt: "auto" }}>
-        <Box
-          sx={{
-            p: 2,
-            borderRadius: 2,
-            background: alpha(theme.palette.primary.main, 0.08),
-          }}
-        >
-          <Typography variant="body2" fontWeight={600}>
-            Need Help?
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            support@gaunghar.com
-          </Typography>
-        </Box>
-      </Box>
     </Drawer>
   );
 };

@@ -18,6 +18,12 @@ import ManagementYear from "./pages/admin/ManagementYear";
 import Management from "./pages/admin/Management";
 import Income from "./pages/admin/IncomeExpense";
 
+//for the user 
+import UserProtectedRoute from "./components/user/UserProtectedRoute";
+import UserLogin from "./pages/user/UserLogin";
+import UserDashboard from "./pages/user/UserDashboard";
+
+
 function App() {
   return (
     <BrowserRouter>
@@ -39,6 +45,12 @@ function App() {
         <Route path="/admin/management-year" element={<ProtectedRoute><ManagementYear /></ProtectedRoute>} />
         <Route path="/admin/management" element={<ProtectedRoute><Management /></ProtectedRoute>} />
         <Route path="/admin/income-expense" element={<ProtectedRoute><Income /></ProtectedRoute>} />
+
+         {/* ================= USER ================= */}
+        <Route path="/login" element={<UserLogin />} />
+
+        <Route path="/user/dashboard" element={<UserProtectedRoute><UserDashboard /></UserProtectedRoute>} />
+         
       </Routes>
     </BrowserRouter>
   );
