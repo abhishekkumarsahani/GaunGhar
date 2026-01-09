@@ -19,15 +19,24 @@ import Management from "./pages/admin/Management";
 import Income from "./pages/admin/IncomeExpense";
 
 //for the user 
+import HomePage from "./pages/user/HomePage";
 import UserProtectedRoute from "./components/user/UserProtectedRoute";
 import UserLogin from "./pages/user/UserLogin";
 import UserDashboard from "./pages/user/UserDashboard";
+import About from "./pages/user/AboutPage";
+import Features from "./pages/user/FeaturesPage";
 
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+
+        {/* ================= PUBLIC ROUTES ================= */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/features" element={<Features />} />
+        
         <Route path="/admin/login" element={<AdminLoginPage />} />
         {/* Protected Routes */}
         <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />

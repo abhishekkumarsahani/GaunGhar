@@ -1,14 +1,78 @@
-import { Box } from "@mui/material";
+import { Box, Toolbar, Container, Typography } from "@mui/material";
 import UserSidebar from "./UserSidebar";
 import UserNavbar from "./UserNavbar";
 
+const drawerWidth = 280;
+
 const UserLayout = ({ children }) => {
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box sx={{ 
+      display: "flex", 
+      minHeight: "100vh", 
+      bgcolor: "background.default",
+      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+      overflowX: 'hidden',
+    }}>
       <UserSidebar />
-      <Box sx={{ flexGrow: 1 }}>
+
+      <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            p: 3,
+            minHeight: "100vh",
+          }}
+        >
         <UserNavbar />
-        <Box sx={{ p: 3 }}>{children}</Box>
+        <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }} />
+
+        {/* Main Content Container */}
+        <Box
+          sx={{
+            flex: 1,
+            width: '100%',
+            maxWidth: '100%',
+            py: { xs: 2, sm: 3, md: 4 },
+            px: { xs: 2, sm: 3, md: 4, lg: 5, xl: 6 },
+          }}
+        >
+          <Box
+            sx={{
+              width: '100%',
+              maxWidth: { xs: '100%', lg: '1400px', xl: '1600px' },
+              mx: 'auto',
+              position: 'relative',
+            }}
+          >
+            {children}
+          </Box>
+        </Box>
+
+        {/* Footer */}
+        <Box
+          component="footer"
+          sx={{
+            py: 2,
+            px: { xs: 2, sm: 3, md: 4 },
+            mt: 'auto',
+            bgcolor: 'background.paper',
+            borderTop: '1px solid',
+            borderColor: 'divider',
+            width: '100%',
+            maxWidth: { xs: '100%', lg: '1400px', xl: '1600px' },
+            mx: 'auto',
+            display: 'flex',
+            justifyContent: 'center',
+          }}
+        >
+          <Typography 
+            variant="body2" 
+            color="text.secondary" 
+            align="center"
+          >
+            © {new Date().getFullYear()} Hawkins Tole Management System. All rights reserved.
+          </Typography>
+        </Box>
       </Box>
     </Box>
   );
