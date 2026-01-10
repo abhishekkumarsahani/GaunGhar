@@ -47,32 +47,6 @@ const UserLayout = ({ children }) => {
             {children}
           </Box>
         </Box>
-
-        {/* Footer */}
-        <Box
-          component="footer"
-          sx={{
-            py: 2,
-            px: { xs: 2, sm: 3, md: 4 },
-            mt: 'auto',
-            bgcolor: 'background.paper',
-            borderTop: '1px solid',
-            borderColor: 'divider',
-            width: '100%',
-            maxWidth: { xs: '100%', lg: '1400px', xl: '1600px' },
-            mx: 'auto',
-            display: 'flex',
-            justifyContent: 'center',
-          }}
-        >
-          <Typography 
-            variant="body2" 
-            color="text.secondary" 
-            align="center"
-          >
-            © {new Date().getFullYear()} Hawkins Tole Management System. All rights reserved.
-          </Typography>
-        </Box>
       </Box>
     </Box>
   );

@@ -25,6 +25,7 @@ import UserLogin from "./pages/user/UserLogin";
 import UserDashboard from "./pages/user/UserDashboard";
 import About from "./pages/user/AboutPage";
 import Features from "./pages/user/FeaturesPage";
+import ToleClient from "./pages/user/ToleClient";
 
 
 function App() {
@@ -59,6 +60,7 @@ function App() {
         <Route path="/login" element={<UserLogin />} />
 
         <Route path="/user/dashboard" element={<UserProtectedRoute><UserDashboard /></UserProtectedRoute>} />
+        <Route path="/user/toleinfo" element={<UserProtectedRoute><ToleClient /></UserProtectedRoute>} />
          
       </Routes>
     </BrowserRouter>
