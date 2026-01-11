@@ -20,6 +20,9 @@ import {
   ReportProblem,
   Settings,
   Help,
+  PersonPinCircle,
+  ContactPhone,
+  Home,
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -36,13 +39,16 @@ const UserSidebar = () => {
     { text: "Profile", icon: <Person />, path: "/user/profile" },
     {
       text: "ToleInfo",
-      icon: <ReportProblem />,
-      path: "/user/toleinfo",
-      badge: 3,
+      icon: <Home />,
+      path: "/user/toleinfo"
     },
+    { text: "Helpline", icon: <ContactPhone />, path: "/user/helpline" },
+    { text: "Events", icon: <Event />, path: "/user/events" },
+    { text: "Complain", icon: <ReportProblem />, path: "/user/complain" },
+    { text: "Near Me", icon: <PersonPinCircle />, path: "/user/near-me" },
     { text: "Government ID", icon: <Badge />, path: "/user/government-identity" },
     { text: "Ledger", icon: <AccountBalance />, path: "/user/ledger" },
-    { text: "Events", icon: <Event />, path: "/user/events" },
+
   ];
 
   const secondaryMenu = [

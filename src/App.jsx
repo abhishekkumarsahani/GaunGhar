@@ -26,6 +26,10 @@ import UserDashboard from "./pages/user/UserDashboard";
 import About from "./pages/user/AboutPage";
 import Features from "./pages/user/FeaturesPage";
 import ToleClient from "./pages/user/ToleClient";
+import HelplineClient from "./pages/user/HelplineClient";
+import EventClient from "./pages/user/EventClient";
+import ComplainClient from "./pages/user/ComplainClient";
+import NearMeClient from "./pages/user/NearMeClient";
 
 
 function App() {
@@ -61,6 +65,10 @@ function App() {
 
         <Route path="/user/dashboard" element={<UserProtectedRoute><UserDashboard /></UserProtectedRoute>} />
         <Route path="/user/toleinfo" element={<UserProtectedRoute><ToleClient /></UserProtectedRoute>} />
+        <Route path="/user/helpline" element={<UserProtectedRoute><HelplineClient /></UserProtectedRoute>} />
+        <Route path="/user/events" element={<UserProtectedRoute><EventClient /></UserProtectedRoute>} />
+        <Route path="/user/complain" element={<UserProtectedRoute><ComplainClient /></UserProtectedRoute>} />
+        <Route path="/user/near-me" element={<UserProtectedRoute><NearMeClient /></UserProtectedRoute>} />
          
       </Routes>
     </BrowserRouter>

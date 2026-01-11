@@ -1,21 +1,47 @@
-import { Box, Toolbar, Container, Typography } from "@mui/material";
-import UserSidebar from "./UserSidebar";
+import { Box, Toolbar, CssBaseline, ThemeProvider, createTheme } from "@mui/material";
+import { useState } from "react";
 import UserNavbar from "./UserNavbar";
-
-const drawerWidth = 280;
+import UserSidebar from "./UserSidebar";
 
 const UserLayout = ({ children }) => {
-  return (
-    <Box sx={{ 
-      display: "flex", 
-      minHeight: "100vh", 
-      bgcolor: "background.default",
-      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-      overflowX: 'hidden',
-    }}>
-      <UserSidebar />
+  const [themeMode, setThemeMode] = useState("light");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
-      <Box
+  const toggleTheme = () => {
+    setThemeMode((prev) => (prev === "light" ? "dark" : "light"));
+  };
+
+  const toggleSidebar = () => {
+    setSidebarOpen((prev) => !prev);
+  };
+
+  const theme = createTheme({
+    palette: {
+      mode: themeMode,
+      primary: { main: "#667eea" },
+      background: {
+        default: themeMode === "light" ? "#f8fafc" : "#121212",
+        paper: themeMode === "light" ? "#ffffff" : "#1e1e1e",
+      },
+    },
+    shape: { borderRadius: 12 },
+  });
+
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+
+      <Box sx={{ display: "flex", minHeight: "100vh" }}>
+        <UserNavbar
+          toggleTheme={toggleTheme}
+          themeMode={themeMode}
+          toggleSidebar={toggleSidebar}
+          sidebarOpen={sidebarOpen}
+        />
+
+        <UserSidebar sidebarOpen={sidebarOpen} />
+
+        <Box
           component="main"
           sx={{
             flexGrow: 1,
@@ -23,32 +49,11 @@ const UserLayout = ({ children }) => {
             minHeight: "100vh",
           }}
         >
-        <UserNavbar />
-        <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }} />
-
-        {/* Main Content Container */}
-        <Box
-          sx={{
-            flex: 1,
-            width: '100%',
-            maxWidth: '100%',
-            py: { xs: 2, sm: 3, md: 4 },
-            px: { xs: 2, sm: 3, md: 4, lg: 5, xl: 6 },
-          }}
-        >
-          <Box
-            sx={{
-              width: '100%',
-              maxWidth: { xs: '100%', lg: '1400px', xl: '1600px' },
-              mx: 'auto',
-              position: 'relative',
-            }}
-          >
-            {children}
-          </Box>
+          <Toolbar />
+          {children}
         </Box>
       </Box>
-    </Box>
+    </ThemeProvider>
   );
 };
 
