@@ -30,6 +30,7 @@ import HelplineClient from "./pages/user/HelplineClient";
 import EventClient from "./pages/user/EventClient";
 import ComplainClient from "./pages/user/ComplainClient";
 import NearMeClient from "./pages/user/NearMeClient";
+import ManagementClient from "./pages/user/ManagementTeam";
 
 
 function App() {
@@ -69,6 +70,7 @@ function App() {
         <Route path="/user/events" element={<UserProtectedRoute><EventClient /></UserProtectedRoute>} />
         <Route path="/user/complain" element={<UserProtectedRoute><ComplainClient /></UserProtectedRoute>} />
         <Route path="/user/near-me" element={<UserProtectedRoute><NearMeClient /></UserProtectedRoute>} />
+        <Route path="/user/management" element={<UserProtectedRoute><ManagementClient /></UserProtectedRoute>} />
          
       </Routes>
     </BrowserRouter>

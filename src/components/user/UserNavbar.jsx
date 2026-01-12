@@ -51,7 +51,7 @@ const SearchBar = styled(Paper)(({ theme }) => ({
   },
 }));
 
-const UserNavbar = ({ collapsed, toggleSidebar }) => {
+const UserNavbar = ({ toggleTheme, themeMode, toggleSidebar, sidebarOpen }) => {
   const navigate = useNavigate();
   const theme = useTheme();
   const [user, setUser] = useState(null);
@@ -59,7 +59,6 @@ const UserNavbar = ({ collapsed, toggleSidebar }) => {
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
 
   // Check login status on component mount and when user changes
   useEffect(() => {
@@ -94,14 +93,14 @@ const UserNavbar = ({ collapsed, toggleSidebar }) => {
       position="fixed"
       elevation={0}
       sx={{
-        width: { sm: isLoggedIn ? `calc(100% - ${collapsed ? 80 : 280}px)` : '100%' },
-        ml: { sm: isLoggedIn ? `${collapsed ? 80 : 280}px` : 0 },
+        width: { sm: isLoggedIn ? `calc(100% - ${sidebarOpen ? 280 : 80}px)` : '100%' },
+        ml: { sm: isLoggedIn ? `${sidebarOpen ? 280 : 80}px` : 0 },
         bgcolor: 'background.paper',
         color: 'text.primary',
         borderBottom: '1px solid',
         borderColor: 'divider',
         backdropFilter: 'blur(10px)',
-        background: theme.palette.mode === 'dark' 
+        background: themeMode === 'dark' 
           ? 'rgba(18, 18, 18, 0.9)' 
           : 'rgba(255, 255, 255, 0.95)',
         zIndex: theme.zIndex.drawer + 1,
@@ -225,9 +224,9 @@ const UserNavbar = ({ collapsed, toggleSidebar }) => {
               </IconButton>
 
               {/* Theme Toggle */}
-              <Tooltip title={darkMode ? "Light Mode" : "Dark Mode"}>
+              <Tooltip title={themeMode === "dark" ? "Light Mode" : "Dark Mode"}>
                 <IconButton
-                  onClick={() => setDarkMode(!darkMode)}
+                  onClick={toggleTheme}
                   sx={{ 
                     color: 'text.secondary',
                     '&:hover': {
@@ -235,7 +234,7 @@ const UserNavbar = ({ collapsed, toggleSidebar }) => {
                     }
                   }}
                 >
-                  {darkMode ? <LightMode /> : <DarkMode />}
+                  {themeMode === "dark" ? <LightMode /> : <DarkMode />}
                 </IconButton>
               </Tooltip>
 
@@ -494,9 +493,9 @@ const UserNavbar = ({ collapsed, toggleSidebar }) => {
               </Box>
 
               {/* Theme Toggle (Visible in both states) */}
-              <Tooltip title={darkMode ? "Light Mode" : "Dark Mode"}>
+              <Tooltip title={themeMode === "dark" ? "Light Mode" : "Dark Mode"}>
                 <IconButton
-                  onClick={() => setDarkMode(!darkMode)}
+                  onClick={toggleTheme}
                   sx={{ 
                     color: 'text.secondary',
                     '&:hover': {
@@ -504,7 +503,7 @@ const UserNavbar = ({ collapsed, toggleSidebar }) => {
                     }
                   }}
                 >
-                  {darkMode ? <LightMode /> : <DarkMode />}
+                  {themeMode === "dark" ? <LightMode /> : <DarkMode />}
                 </IconButton>
               </Tooltip>
 
