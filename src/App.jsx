@@ -25,6 +25,7 @@ import UserLogin from "./pages/user/UserLogin";
 import UserDashboard from "./pages/user/UserDashboard";
 import About from "./pages/user/AboutPage";
 import Features from "./pages/user/FeaturesPage";
+import Contact from "./pages/user/ContactPage";
 import ToleClient from "./pages/user/ToleClient";
 import HelplineClient from "./pages/user/HelplineClient";
 import EventClient from "./pages/user/EventClient";
@@ -42,6 +43,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<About />} />
         <Route path="/features" element={<Features />} />
+        <Route path="/contact" element={<Contact />} />
         
         <Route path="/admin/login" element={<AdminLoginPage />} />
         {/* Protected Routes */}
